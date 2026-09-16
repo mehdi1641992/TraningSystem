@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, X, Download, Upload, List as ListIcon, ArrowCounterClockwise as RotateCcw, Users, Clock, Calendar as CalendarIcon, Table as TableIcon, ChartBar as BarChart3, Link as LinkIcon, Copy as CopyIcon, SignOut as LogOut, UserPlus, Trash as Trash2, ShieldCheck, ChatCircle as MessageSquare, PaperPlaneTilt as Send, DoorOpen, ClipboardText, Key as KeyIcon, GraduationCap as GradCapIcon, Bell as BellIcon, Monitor as MonitorIcon, Warning as WarnIcon, CheckCircle as CheckIcon, NotePencil as Edit, CaretLeft, CaretRight, Compass, SquaresFour, TrendUp, ListDashes, UserCheck, Timer, UsersThree, Buildings, Tag, Columns, SlidersHorizontal, Tray, Archive, FileText, Briefcase, IdentificationBadge, LockKey } from '@phosphor-icons/react';
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, GoogleAuthProvider } from 'firebase/auth';
 import * as XLSX from 'xlsx';
-import { auth as firebaseAuth } from './firebaseConfig';
+import { auth as firebaseAuth, isFirebaseConfigured } from './firebaseConfig';
 import { storage, ASSESSMENT_KEYS, ACADEMY_KEYS, parseStoredArray } from './storage';
 
 // ---- Organization identity ------------------------------------------------
@@ -20,10 +20,10 @@ const SESSION_TYPES = [
   'Practice Teaching', 'Debrief'
 ];
 const TYPE_COLOR = {
-  'Team Culture': '#E8B23D', 'Personal & Prof. Dev.': '#9DB09D', 'Team Support': '#5FA97E',
-  'Academic Content': '#D97355', 'Learning Circle': '#8A78C2', 'Teaching Skills': '#3E8FA0',
-  'System Inequity': '#C79236', 'Meal / Break': '#2A5C4B', 'Practice Teaching': '#D786A8',
-  'Debrief': '#A6ABB2'
+  'Team Culture': '#E4E4E7', 'Personal & Prof. Dev.': '#A1A1AA', 'Team Support': '#D4D4D8',
+  'Academic Content': '#71717A', 'Learning Circle': '#52525B', 'Teaching Skills': '#3F3F46',
+  'System Inequity': '#A1A1AA', 'Meal / Break': '#27272A', 'Practice Teaching': '#A1A1AA',
+  'Debrief': '#A1A1AA'
 };
 const DEFAULT_SESSION_TYPES = Object.keys(TYPE_COLOR).map((name, index) => ({ id: 'type' + index, name, color: TYPE_COLOR[name] }));
 // "Pillars" -- a separate, non-color-coded tag that can be added to sessions.
@@ -35,10 +35,10 @@ const DEFAULT_PILLAR_TAGS = [
 ];
 // Work modes -- editable by full admins.
 const DEFAULT_MODES = [
-  { id: 'mode0', name: 'Sync', color: '#D65641' },
-  { id: 'mode1', name: 'Async', color: '#B8863B' },
-  { id: 'mode2', name: 'Coaching', color: '#6B5CA5' },
-  { id: 'mode3', name: 'Workshop', color: '#A64D4D' },
+  { id: 'mode0', name: 'Sync', color: '#3F3F46' },
+  { id: 'mode1', name: 'Async', color: '#27272A' },
+  { id: 'mode2', name: 'Coaching', color: '#52525B' },
+  { id: 'mode3', name: 'Workshop', color: '#71717A' },
 ];
 const DEFAULT_MODE_COLORS = DEFAULT_MODES.reduce((acc, m) => { acc[m.name] = m.color; return acc; }, {});
 const RESOURCE_KINDS = ['Session plan', 'Slides', 'Async work', 'Exit ticket', 'Old folder', 'Other'];
@@ -347,13 +347,17 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && isFirebaseConfigured) {
       const localUser = getLocalTestUser();
       if (localUser) {
         setAuth(localUser);
         setAuthLoaded(true);
         return;
       }
+    }
+    if (!isFirebaseConfigured) {
+      setAuthLoaded(true);
+      return;
     }
     return onAuthStateChanged(firebaseAuth, async (user) => {
       if (!user) {
@@ -420,7 +424,7 @@ export default function App() {
     return handleLogout();
   };
 
-  if (!authLoaded) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#9DB09D', fontFamily: FONT }}>Loading…</div>;
+  if (!authLoaded) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#A1A1AA', fontFamily: FONT }}>Loading…</div>;
   if (!auth) return <LoginGate onLogin={handleLogin} onLocalLogin={handleLocalLogin} onRedirectLogin={handleRedirectLogin} error={authError} busy={authBusy} />;
   return <MainApp auth={auth} onLogout={handleLogoutAll} />;
 }
@@ -479,16 +483,49 @@ async function resolveRole(user) {
 }
 
 function LoginGate({ onLogin, onLocalLogin, onRedirectLogin, error, busy }) {
+  const demoBase = import.meta.env.BASE_URL || '/';
+  const openDemo = page => window.open(demoBase + 'demo/' + page + '.html', '_blank', 'noopener');
   return (
-    <div className="wa14-app" style={{ fontFamily: FONT, minHeight: '480px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#252625' }}>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 10, padding: 32, width: 340, maxWidth: '88vw' }}>
-        <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 2 }}>Training and Design</div>
-        <div style={{ fontSize: 12, color: '#9DB09D', marginBottom: 4 }}>{ORG_NAME}</div>
-        <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 20 }}>Sign in with your {ORG_NAME} Google account.</div>
-        {error && <div style={{ color: '#D0A023', fontSize: 12, marginBottom: 10, lineHeight: 1.4 }}>{error}</div>}
-        <button type="button" onClick={onLogin} disabled={busy} className={btnPrimary + ' w-full justify-center py-2.5 mt-1.5'} style={{ opacity: busy ? 0.65 : 1 }}>{busy ? 'Opening Google…' : 'Continue with Google'}</button>
+    <div className="wa14-app" style={{ fontFamily: FONT, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090B', color: '#FAFAFA', padding: 16 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 16, padding: 28, width: 400, maxWidth: '92vw' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ width: 52, height: 52, background: '#27272A', border: '1px solid #3F3F46', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#FAFAFA' }}>
+            <GradCapIcon size={26} />
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 19, letterSpacing: '-0.01em' }}>Curriculum &amp; Training System</div>
+          <div style={{ fontSize: 12, color: '#A1A1AA', marginTop: 3 }}>{ORG_NAME}</div>
+        </div>
+
+        <button type="button" onClick={onLogin} disabled={busy || !isFirebaseConfigured} className={btnPrimary + ' w-full justify-center py-2.5'} style={{ opacity: busy ? 0.65 : 1 }}>{busy ? 'Opening Google…' : 'Continue with Google'}</button>
+        {!isFirebaseConfigured && <p role="status" style={{ fontSize: 12, color: '#A1A1AA', marginTop: 12 }}>Firebase is not configured yet. Explore both demos below without signing in. See the README to enable Google sign-in.</p>}
+        {error && <div style={{ color: '#E4E4E7', fontSize: 12, marginTop: 10, lineHeight: 1.45 }}>{error}</div>}
         {error && <button type="button" onClick={onRedirectLogin} disabled={busy} className={btnGhost + ' w-full justify-center mt-2'}>Use redirect sign-in</button>}
-        {import.meta.env.DEV && <div style={{ marginTop: 22, paddingTop: 16, borderTop: '1px solid #1F4A3C' }}><div style={{ fontSize: 11.5, color: '#9DB09D', marginBottom: 8 }}>Local testing only. These buttons are disabled in production.</div><div style={{ display: 'flex', gap: 8 }}><button type="button" onClick={() => onLocalLogin('superadmin')} className={btnSecondary + ' flex-1 justify-center'}>Test superuser</button><button type="button" onClick={() => onLocalLogin('fellow')} className={btnSecondary + ' flex-1 justify-center'}>Test Participant</button></div></div>}
+        <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 10, textAlign: 'center', lineHeight: 1.45 }}>Sign in with your {ORG_NAME} Google account. Staff use name@{ORG_DOMAIN}; Participants use firstname.lastname@{ORG_DOMAIN}.</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '22px 0 14px' }}>
+          <span style={{ flex: 1, height: 1, background: '#27272A' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#A1A1AA' }}>Explore the demo</span>
+          <span style={{ flex: 1, height: 1, background: '#27272A' }} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button type="button" onClick={() => openDemo('admin')} className="w-full text-left p-3.5 rounded-xl border border-[#27272A] bg-[#09090B] hover:border-[#3F3F46] transition-all flex items-center justify-between cursor-pointer" style={{ fontFamily: FONT }}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: '#FAFAFA' }}>Admin Panel</div>
+              <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 2 }}>Dashboard, calendar, roster, attendance, analytics</div>
+            </div>
+            <ShieldCheck size={18} style={{ color: '#A1A1AA', flexShrink: 0 }} />
+          </button>
+          <button type="button" onClick={() => openDemo('participant')} className="w-full text-left p-3.5 rounded-xl border border-[#27272A] bg-[#09090B] hover:border-[#3F3F46] transition-all flex items-center justify-between cursor-pointer" style={{ fontFamily: FONT }}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: '#FAFAFA' }}>Participant Panel</div>
+              <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 2 }}>Weekly calendar, attendance, assessments, devices</div>
+            </div>
+            <GradCapIcon size={18} style={{ color: '#A1A1AA', flexShrink: 0 }} />
+          </button>
+        </div>
+
+        {import.meta.env.DEV && isFirebaseConfigured && <div style={{ marginTop: 22, paddingTop: 16, borderTop: '1px solid #27272A' }}><div style={{ fontSize: 11.5, color: '#A1A1AA', marginBottom: 8 }}>Local testing only. These buttons are disabled in production.</div><div style={{ display: 'flex', gap: 8 }}><button type="button" onClick={() => onLocalLogin('superadmin')} className={btnSecondary + ' flex-1 justify-center'}>Test superuser</button><button type="button" onClick={() => onLocalLogin('fellow')} className={btnSecondary + ' flex-1 justify-center'}>Test Participant</button></div></div>}
       </div>
     </div>
   );
@@ -1043,11 +1080,11 @@ const calendarSessions = auth.role === 'fellow' ? filtered.filter(session => fel
 const openRequests = (requests || []).filter(r => !r.resolved).length;
 
 if (!loaded || !sessions || !roster || !planners || !requests || !rooms || !sessionTypes || !pillarTags || !modes || !roles || !cityCodes || !academySettings || !academyOverview || !assessments || !assessmentQuestions || !assessmentAttempts || !attendance || !assessmentIncidents || !deviceRequests || !staffTasks) {
-  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#9DB09D', fontFamily: FONT }}>Loading schedule...</div>;
+  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#A1A1AA', fontFamily: FONT }}>Loading schedule...</div>;
 }
 
 return (
-  <div className="wa14-app min-h-screen flex flex-col" style={{ fontFamily: FONT, background: '#252625', color: '#D5E0D5' }}>
+  <div className="wa14-app min-h-screen flex flex-col" style={{ fontFamily: FONT, background: '#09090B', color: '#FAFAFA' }}>
     <div className="wa14-main flex flex-1 min-h-screen">
       <Sidebar tab={tab} setTab={setTab} isAdmin={isAdmin} isFullAdmin={isFullAdmin} isSuperadmin={isSuperadmin} isFellow={auth.role === 'fellow'} openRequests={openRequests} />
       <div className="wa14-content flex-1 min-w-0">
@@ -1159,7 +1196,7 @@ function blankStaffTask() {
   return { id: 'st-' + Date.now(), kind: 'staff-task', name: '', date: '', weekday: '', start: '', end: '', week: 0, notes: '', owner: '', status: 'todo' };
 }
 
-const toastStyle = 'fixed top-4 right-6 bg-[#005B3F] text-white px-4 py-2.5 rounded-md text-[13px] z-[200] shadow-lg';
+const toastStyle = 'fixed top-4 right-6 bg-[#18181B] text-white px-4 py-2.5 rounded-md text-[13px] z-[200] shadow-lg';
 
 function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, setActiveWeek, hiddenDays, setHiddenDays, isFullAdmin, onSelect, onEditStaff, onAddStaff }) {
   const [showStaff, setShowStaff] = useState(true);
@@ -1196,16 +1233,16 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
   });
   const bandScale = makeBandScale(busyBands);
   const totalHeight = bandScale.total;
-  const staffColor = '#D0A023';
+  const staffColor = '#E4E4E7';
   const staffScrollRef = useRef(null);
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#D5E0D5' }}>Staff planning calendar</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#D5E0D5', cursor: 'pointer' }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#FAFAFA' }}>Staff planning calendar</span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#FAFAFA', cursor: 'pointer' }}>
           <input type="checkbox" checked={showStaff} onChange={() => setShowStaff(v => !v)} /> Staff tasks
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#D5E0D5', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#FAFAFA', cursor: 'pointer' }}>
           <input type="checkbox" checked={showMain} onChange={() => setShowMain(v => !v)} /> Main sessions
         </label>
         {isFullAdmin && <button onClick={onAddStaff} className={btnPrimary}><Plus size={14} /> Add staff task</button>}
@@ -1214,15 +1251,15 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
         {weeks.map(w => (
           <button key={w} onClick={() => setActiveWeek(w)} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            border: activeWeek === w ? '1px solid #1F6F78' : '1px solid #C9CDD2',
-            background: activeWeek === w ? '#1F6F78' : '#fff', color: activeWeek === w ? '#fff' : '#003223'
+            border: activeWeek === w ? '1px solid #A1A1AA' : '1px solid #52525B',
+            background: activeWeek === w ? '#FAFAFA' : '#27272A', color: activeWeek === w ? '#09090B' : '#A1A1AA'
           }}>Week {String(w).padStart(2, '0')} · {weekLabel(w)}</button>
         ))}
       </div>
       {days.length > 1 && (
         <div style={{ display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap' }}>
           {days.map(([d, wd]) => (
-            <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#D5E0D5', cursor: 'pointer' }}>
+            <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#FAFAFA', cursor: 'pointer' }}>
               <input type="checkbox" checked={!hiddenDays[d]} onChange={() => setHiddenDays(h => ({ ...h, [d]: !h[d] }))} />
               {wd}, {dateLabel(d)}
             </label>
@@ -1230,20 +1267,20 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
         </div>
       )}
       <div className="wa14-cal-scroll-wrap">
-      <div ref={staffScrollRef} className="wa14-cal-scroll wa14-floating-scroll"><div className="bg-white rounded-lg border border-[#DDE2E6]" style={{ display: 'flex', width: '100%', minWidth: 'fit-content' }}>
-          <div className="w-14 shrink-0 border-r border-[#EEF0F2] box-border">
-            <div className="h-[46px] border-b border-[#EEF0F2] bg-[#F7F8F9]"></div>
+      <div ref={staffScrollRef} className="wa14-cal-scroll wa14-floating-scroll"><div className="bg-[#18181B] rounded-lg border border-[#27272A]" style={{ display: 'flex', width: '100%', minWidth: 'fit-content' }}>
+          <div className="w-14 shrink-0 border-r border-[#27272A] box-border">
+            <div className="h-[46px] border-b border-[#27272A] bg-[#1F1F23]"></div>
             <div className="relative" style={{ height: totalHeight }}>
-              {hours.map(m => (<div key={m} className="absolute right-2 text-[10.5px] text-[#003223]" style={{ top: bandScale.offsets[(m - GRID_START) / 60] - 6 }}>{String(Math.floor(m / 60)).padStart(2, '0')}:00</div>))}
+              {hours.map(m => (<div key={m} className="absolute right-2 text-[10.5px] text-[#A1A1AA]" style={{ top: bandScale.offsets[(m - GRID_START) / 60] - 6 }}>{String(Math.floor(m / 60)).padStart(2, '0')}:00</div>))}
             </div>
           </div>
           {visibleDays.map(([d, wd]) => {
             const dayStaff = layoutOverlapping(staffWeekTasks.filter(s => s.date === d).sort((a, b) => toMin(a.start) - toMin(b.start)));
             const dayMain = layoutOverlapping(mainWeekTasks.filter(s => s.date === d).sort((a, b) => toMin(a.start) - toMin(b.start)));
             return (
-              <div key={d} className="flex-1 min-w-[150px] border-r border-[#EEF0F2] box-border" style={{ flexShrink: 1, flexGrow: 1, flexBasis: 150 }}>
-                <div className="h-[46px] box-border border-b border-[#EEF0F2] bg-[#F7F8F9] text-[12.5px] font-semibold text-center pt-[5px] text-[#003223]">
-                  {wd}<div className="font-normal text-[#003223] text-[11px] leading-tight">{dateLabel(d)}</div>
+              <div key={d} className="flex-1 min-w-[150px] border-r border-[#27272A] box-border" style={{ flexShrink: 1, flexGrow: 1, flexBasis: 150 }}>
+                <div className="h-[46px] box-border border-b border-[#27272A] bg-[#1F1F23] text-[12.5px] font-semibold text-center pt-[5px] text-[#FAFAFA]">
+                  {wd}<div className="font-normal text-[#A1A1AA] text-[11px] leading-tight">{dateLabel(d)}</div>
                 </div>
                 <div className="relative" style={{ height: totalHeight }} onClick={e => {
                   if (!isFullAdmin || e.target !== e.currentTarget) return;
@@ -1255,7 +1292,7 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
                   e.preventDefault();
                   try { const item = JSON.parse(e.dataTransfer.getData('application/json')); if (item.kind !== 'staff-task' || !isFullAdmin) return; const rect = e.currentTarget.getBoundingClientRect(); const minutes = bandScale.minutesAt(e.clientY - rect.top); const start = String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0'); const weekday = new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long' }); onEditStaff({ ...item, date: d, weekday, start, end: start, week: startDate ? weekForDate(d, startDate) : 0, calendared: true }); } catch {}
                 }}>
-                  {hours.map(m => (<div key={m} style={{ position: 'absolute', top: bandScale.offsets[(m - GRID_START) / 60], left: 0, right: 0, borderTop: '1px solid #F2F3F4' }} />))}
+                  {hours.map(m => (<div key={m} style={{ position: 'absolute', top: bandScale.offsets[(m - GRID_START) / 60], left: 0, right: 0, borderTop: '1px solid #27272A' }} />))}
                   {dayMain.map(({ s, col, cols }) => {
                     const start = toMin(s.start) || 0;
                     const endMin = wrapsMidnight(s) ? GRID_END : (toMin(s.end) || start);
@@ -1264,10 +1301,10 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
                     return (
                       <div key={'main-' + s.id} onClick={() => onSelect(s)} style={{
                         position: 'absolute', top: bandScale.y(start), left: `calc(${col * 100 / cols}% + 2px)`, width: `calc(${100 / cols}% - 4px)`, height,
-                        background: color + '26', borderLeft: '3px solid ' + color, borderRadius: 4, padding: '3px 6px', cursor: 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, boxSizing: 'border-box', opacity: 0.7
+                        background: '#1F1F23', borderLeft: '3px solid ' + color, borderRadius: 4, padding: '3px 6px', cursor: 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, boxSizing: 'border-box', opacity: 0.7
                       }} title={s.name + ' (main session)'}>
-                        <div style={{ fontWeight: 600, color: '#1B2733' }}>{s.name}</div>
-                        {height > 28 && <div style={{ color: '#003223' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
+                        <div style={{ fontWeight: 600, color: '#FAFAFA' }}>{s.name}</div>
+                        {height > 28 && <div style={{ color: '#FAFAFA' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
                       </div>
                     );
                   })}
@@ -1278,11 +1315,11 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
                     return (
                       <div key={'staff-' + s.id} draggable={isFullAdmin} onDragStart={e => e.dataTransfer.setData('application/json', JSON.stringify(s))} onClick={() => isFullAdmin ? onEditStaff(s) : onSelect(s)} style={{
                         position: 'absolute', top: bandScale.y(start), left: `calc(${col * 100 / cols}% + 2px)`, width: `calc(${100 / cols}% - 4px)`, height,
-                        background: staffColor + '26', borderLeft: '3px solid ' + staffColor, borderRadius: 4, padding: '3px 6px', cursor: isFullAdmin ? 'grab' : 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, boxSizing: 'border-box', boxShadow: 'inset 0 0 0 1px ' + staffColor
+                        background: '#1F1F23', borderLeft: '3px solid ' + staffColor, borderRadius: 4, padding: '3px 6px', cursor: isFullAdmin ? 'grab' : 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, boxSizing: 'border-box', boxShadow: 'inset 0 0 0 1px ' + staffColor
                       }} title={s.name + ' (staff task)'}>
-                        <div style={{ fontWeight: 600, color: '#1B2733' }}>{s.name}{s.owner ? ' · ' + s.owner : ''}</div>
-                        {height > 28 && <div style={{ color: '#003223' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
-                        {height > 42 && s.status && <div style={{ color: '#003223', fontStyle: 'italic' }}>{s.status}</div>}
+                        <div style={{ fontWeight: 600, color: '#FAFAFA' }}>{s.name}{s.owner ? ' · ' + s.owner : ''}</div>
+                        {height > 28 && <div style={{ color: '#FAFAFA' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
+                        {height > 42 && s.status && <div style={{ color: '#FAFAFA', fontStyle: 'italic' }}>{s.status}</div>}
                       </div>
                     );
                   })}
@@ -1293,25 +1330,25 @@ function StaffCalendar({ staffTasks, sessions, weeks, startDate, activeWeek, set
         </div></div>
       <FloatingScrollbar targetRef={staffScrollRef} />
       </div>
-      <div style={{ marginTop: 18, background: '#fff', border: '1px solid #DDE2E6', borderRadius: 8, padding: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#003223' }}>Staff task list</div>
+      <div style={{ marginTop: 18, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>Staff task list</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18, minWidth: 480 }}>
           {staffTasks.filter(s => s.date).sort((a, b) => (a.date || '').localeCompare(b.date || '') || toMin(a.start) - toMin(b.start)).map(s => (
-            <div key={s.id} onClick={() => isFullAdmin ? onEditStaff(s) : onSelect(s)} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderBottom: '1px solid #EEF0F2', fontSize: 12.5, cursor: 'pointer' }}>
-              <span style={{ color: '#003223' }}>{s.name || '(untitled)'}{s.owner ? ' · ' + s.owner : ''}</span>
-              <span style={{ color: '#003223', whiteSpace: 'nowrap' }}>{dateLabel(s.date)} · {s.start}–{s.end} · {fmtDur(durationMin(s))}{s.status ? ' · ' + s.status : ''}</span>
+            <div key={s.id} onClick={() => isFullAdmin ? onEditStaff(s) : onSelect(s)} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderBottom: '1px solid #27272A', fontSize: 12.5, cursor: 'pointer' }}>
+              <span style={{ color: '#FAFAFA' }}>{s.name || '(untitled)'}{s.owner ? ' · ' + s.owner : ''}</span>
+              <span style={{ color: '#FAFAFA', whiteSpace: 'nowrap' }}>{dateLabel(s.date)} · {s.start}–{s.end} · {fmtDur(durationMin(s))}{s.status ? ' · ' + s.status : ''}</span>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#003223' }}>Unscheduled staff tasks</div>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>Unscheduled staff tasks</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {staffTasks.filter(s => !s.date).map(s => (
-            <div key={s.id} draggable={isFullAdmin} onDragStart={e => e.dataTransfer.setData('application/json', JSON.stringify(s))} onClick={() => isFullAdmin ? onEditStaff(s) : onSelect(s)} style={{ padding: '8px 10px', border: '1px solid #DDE2E6', borderLeft: '3px solid ' + staffColor, borderRadius: 5, cursor: isFullAdmin ? 'grab' : 'pointer', fontSize: 12.5, background: '#fff' }}>
+            <div key={s.id} draggable={isFullAdmin} onDragStart={e => e.dataTransfer.setData('application/json', JSON.stringify(s))} onClick={() => isFullAdmin ? onEditStaff(s) : onSelect(s)} style={{ padding: '8px 10px', border: '1px solid #27272A', borderLeft: '3px solid ' + staffColor, borderRadius: 5, cursor: isFullAdmin ? 'grab' : 'pointer', fontSize: 12.5, background: '#18181B' }}>
               {s.name || '(untitled)'}{s.owner ? ' · ' + s.owner : ''}
             </div>
           ))}
         </div>
-        {staffTasks.length === 0 && <div style={{ fontSize: 12.5, color: '#003223' }}>No staff tasks yet. {isFullAdmin ? 'Click "Add staff task" to create one.' : ''}</div>}
+        {staffTasks.length === 0 && <div style={{ fontSize: 12.5, color: '#FAFAFA' }}>No staff tasks yet. {isFullAdmin ? 'Click "Add staff task" to create one.' : ''}</div>}
       </div>
     </div>
   );
@@ -1337,11 +1374,11 @@ function StaffTaskEditor({ task, isFullAdmin, onSave, onDelete, onClose }) {
     });
   };
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,0.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 400, maxWidth: '92vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 400, maxWidth: '92vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{task ? 'Edit staff task' : 'New staff task'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9DB09D' }}><X size={18} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA' }}><X size={18} /></button>
         </div>
         <Field label="Task name"><input className={inputStyle} value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Prep slides for IT Skills" /></Field>
         <Field label="Owner / assignee"><input className={inputStyle} value={form.owner || ''} onChange={e => set('owner', e.target.value)} placeholder="Staff name" /></Field>
@@ -1355,14 +1392,14 @@ function StaffTaskEditor({ task, isFullAdmin, onSave, onDelete, onClose }) {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Field label="Duration (min)" style={{ flex: 1 }}><select className={inputStyle} value={staffCustomMode || !DURATION_PRESETS.includes(Number(staffTaskDuration)) ? 'custom' : Number(staffTaskDuration)} onChange={e => onStaffDurationPreset(e.target.value)}>{DURATION_PRESETS.map(d => <option key={d} value={d}>{d}m</option>)}<option value="custom">Custom…</option></select></Field>
-          <Field label="Duration" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#EEF0F2', color: '#003223', fontWeight: 600 }}>{form.start ? fmtDur(staffTaskDuration) : '--'}</div></Field>
+          <Field label="Duration" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{form.start ? fmtDur(staffTaskDuration) : '--'}</div></Field>
         </div>
         {(staffCustomMode || !DURATION_PRESETS.includes(Number(staffTaskDuration))) && <Field label="Custom duration (minutes)"><input type="number" min="1" max="1439" className={inputStyle} value={staffTaskDuration} onChange={e => onStaffCustomDuration(e.target.value)} placeholder="e.g. 75" /></Field>}
         <Field label="Status"><select className={inputStyle} value={form.status || 'todo'} onChange={e => set('status', e.target.value)}>{STAFF_STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select></Field>
         <Field label="Notes"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.notes || ''} onChange={e => set('notes', e.target.value)} placeholder="Planning notes (staff only)" /></Field>
         <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
           <button onClick={handleSave} className={btnPrimary + ' flex-1 justify-center py-2.5'}>Save task</button>
-          {onDelete && <button onClick={() => { if (window.confirm('Delete this staff task?')) onDelete(form.id); }} className={btnSecondary + ' text-[#D0A023] border-[#E3B8B8]'}>Delete</button>}
+          {onDelete && <button onClick={() => { if (window.confirm('Delete this staff task?')) onDelete(form.id); }} className={btnSecondary + ' text-[#E4E4E7] border-[#52525B]'}>Delete</button>}
         </div>
       </div>
     </div>
@@ -1406,15 +1443,15 @@ function Sidebar({ tab, setTab, isAdmin, isFullAdmin, isSuperadmin, isFellow, op
   };
   return (
     <>
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#005B3F] border-b border-[#2A5C4B]">
-        <button onClick={() => setOpen(v => !v)} className={btnSecondary} aria-label="Toggle navigation"><ListIcon size={16} /> Menu {openRequests > 0 && <span className="ml-1 text-xs font-bold text-[#D65641]">({openRequests})</span>}</button>
-        <div className="text-[13px] font-bold text-[#D5E0D5]">{tabs.find(t => t.id === tab)?.label || 'Winter Academy Calendar'}</div>
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#18181B] border-b border-[#27272A]">
+        <button onClick={() => setOpen(v => !v)} className={btnSecondary} aria-label="Toggle navigation"><ListIcon size={16} /> Menu {openRequests > 0 && <span className="ml-1 text-xs font-bold text-[#FAFAFA]">({openRequests})</span>}</button>
+        <div className="text-[13px] font-bold text-[#FAFAFA]">{tabs.find(t => t.id === tab)?.label || 'Winter Academy Calendar'}</div>
       </div>
-      {open && <button aria-label="Close navigation" onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,32,0.35)', border: 0, zIndex: 40 }} />}
-      <nav className={`wa14-sidebar relative z-[45] shrink-0 bg-[#005B3F] text-[#D5E0D5] flex flex-col sticky top-0 self-stretch overflow-y-auto overflow-x-hidden transition-all duration-200 ease-out ${open ? 'w-[220px] open' : 'w-[56px]'} max-lg:fixed max-lg:top-0 max-lg:bottom-0 max-lg:left-0 max-lg:z-[45] max-lg:w-[220px] ${open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-[110%]'}`}>
-        <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#2A5C4B]/60 shrink-0">
-          {open && <span className="text-[11px] font-bold tracking-wider uppercase text-[#D5E0D5]/70 pl-1">Menu</span>}
-          <button onClick={() => setOpen(o => !o)} title={open ? 'Collapse menu' : 'Expand menu'} className="bg-transparent border-none text-[#FFFFFF] cursor-pointer p-1.5 rounded-md hover:bg-[#00402E] transition-colors flex items-center justify-center mx-auto">
+      {open && <button aria-label="Close navigation" onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', border: 0, zIndex: 40 }} />}
+      <nav className={`wa14-sidebar relative z-[45] shrink-0 bg-[#18181B] text-[#FAFAFA] flex flex-col sticky top-0 self-stretch overflow-y-auto overflow-x-hidden transition-all duration-200 ease-out ${open ? 'w-[220px] open' : 'w-[56px]'} max-lg:fixed max-lg:top-0 max-lg:bottom-0 max-lg:left-0 max-lg:z-[45] max-lg:w-[220px] ${open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-[110%]'}`}>
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#27272A]/60 shrink-0">
+          {open && <span className="text-[11px] font-bold tracking-wider uppercase text-[#FAFAFA]/70 pl-1">Menu</span>}
+          <button onClick={() => setOpen(o => !o)} title={open ? 'Collapse menu' : 'Expand menu'} className="bg-transparent border-none text-[#FAFAFA] cursor-pointer p-1.5 rounded-md hover:bg-[#1F1F23] transition-colors flex items-center justify-center mx-auto">
             {open ? <CaretLeft size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
           </button>
         </div>
@@ -1429,8 +1466,8 @@ function Sidebar({ tab, setTab, isAdmin, isFullAdmin, isSuperadmin, isFellow, op
                 title={t.label}
                 className={`wa14-nav-item flex items-center gap-2.5 px-2.5 py-2 mx-1.5 rounded-lg text-[13px] whitespace-nowrap no-underline ${
                   active
-                    ? 'bg-[#D65641] text-white font-semibold shadow-xs'
-                    : 'text-[#D5E0D5] hover:bg-[#00402E] hover:text-white font-medium'
+                    ? 'bg-[#FAFAFA] text-[#09090B] font-semibold shadow-xs'
+                    : 'text-[#FAFAFA] hover:bg-[#1F1F23] hover:text-white font-medium'
                 }`}
               >
                 <div className="w-7 h-7 flex items-center justify-center shrink-0 rounded-md">
@@ -1448,10 +1485,10 @@ function Sidebar({ tab, setTab, isAdmin, isFullAdmin, isSuperadmin, isFellow, op
 
 function TopBar({ tab, isFullAdmin, auth, onLogout, onAdd, roles }) {
   return (
-    <div className="bg-[#003223]/95 backdrop-blur-md border-b border-[#2A5C4B] px-4 sm:px-6 flex items-center justify-between flex-wrap gap-3 sticky top-0 z-20 shadow-xs">
+    <div className="bg-[#18181B]/95 backdrop-blur-md border-b border-[#27272A] px-4 sm:px-6 flex items-center justify-between flex-wrap gap-3 sticky top-0 z-20 shadow-xs">
       <div className="py-2.5 min-w-[170px]">
         <div className="font-extrabold text-lg sm:text-xl leading-tight text-white tracking-tight">Participant Training System</div>
-        <div className="text-[11.5px] text-[#9DB09D] mt-[2px] font-medium wa14-hide-mobile">{ORG_NAME}</div>
+        <div className="text-[11.5px] text-[#A1A1AA] mt-[2px] font-medium wa14-hide-mobile">{ORG_NAME}</div>
       </div>
       <div className="flex items-center gap-3 py-2.5 flex-wrap">
         {isFullAdmin && (
@@ -1463,11 +1500,11 @@ function TopBar({ tab, isFullAdmin, auth, onLogout, onAdd, roles }) {
             )}
           </div>
         )}
-        <div className="flex items-center gap-2.5 text-xs text-[#9DB09D] border-l border-[#1F4A3C] pl-3.5 min-w-0">
-          <span className="truncate max-w-[180px] sm:max-w-none bg-[#00402E] px-2.5 py-1 rounded-md text-[#D5E0D5] font-medium border border-[#2A5C4B]/60">
-            {auth.email} · <span className="text-[#D65641] font-semibold">{getRoleLabel(auth.role, roles)}</span>
+        <div className="flex items-center gap-2.5 text-xs text-[#A1A1AA] border-l border-[#27272A] pl-3.5 min-w-0">
+          <span className="truncate max-w-[180px] sm:max-w-none bg-[#1F1F23] px-2.5 py-1 rounded-md text-[#FAFAFA] font-medium border border-[#27272A]/60">
+            {auth.email} · <span className="text-[#FAFAFA] font-semibold">{getRoleLabel(auth.role, roles)}</span>
           </span>
-          <button onClick={onLogout} title="Sign out / Switch user" className="bg-transparent border-none cursor-pointer text-[#9DB09D] hover:text-[#D65641] transition-colors flex p-1.5 rounded-md hover:bg-[#00402E]">
+          <button onClick={onLogout} title="Sign out / Switch user" className="bg-transparent border-none cursor-pointer text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors flex p-1.5 rounded-md hover:bg-[#1F1F23]">
             <LogOut size={16} />
           </button>
         </div>
@@ -1477,29 +1514,29 @@ function TopBar({ tab, isFullAdmin, auth, onLogout, onAdd, roles }) {
 }
 
 const btnBase = 'inline-flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-3 py-2 cursor-pointer border border-transparent transition-all duration-150 active:scale-[0.98]';
-const btnPrimary = btnBase + ' bg-[#D65641] text-white hover:bg-[#c04b37] shadow-xs';
-const btnSecondary = btnBase + ' bg-[#003223] text-[#D5E0D5] border-[#2A5C4B] hover:bg-[#00402E] hover:text-white';
-const btnGhost = btnBase + ' bg-transparent text-[#D5E0D5] hover:bg-[#00402E]/60 hover:text-white';
-const selectStyle = 'px-2.5 py-1.5 rounded-lg border border-[#2A5C4B] text-[13px] bg-white text-[#252625] shadow-xs';
+const btnPrimary = btnBase + ' bg-[#FAFAFA] text-[#09090B] hover:bg-[#E4E4E7] shadow-xs';
+const btnSecondary = btnBase + ' bg-[#18181B] text-[#FAFAFA] border-[#27272A] hover:bg-[#1F1F23] hover:text-white';
+const btnGhost = btnBase + ' bg-transparent text-[#FAFAFA] hover:bg-[#1F1F23]/60 hover:text-white';
+const selectStyle = 'px-3 py-1.5 rounded-lg border border-[#27272A] text-[13px] bg-[#18181B] text-[#FAFAFA] shadow-xs focus:outline-none focus:border-[#52525B]';
 
 function FilterBar({ typeFilter, setTypeFilter, pillarTagFilter, setPillarTagFilter, modeFilter, setModeFilter, sessionTypes, pillarTags, modes }) {
   const anyFilter = typeFilter !== 'all' || modeFilter !== 'all' || pillarTagFilter !== 'all';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12.5, color: '#D5E0D5' }}>Type</span>
+        <span style={{ fontSize: 12.5, color: '#FAFAFA' }}>Type</span>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className={selectStyle}>
           <option value="all">All types</option>{(sessionTypes || DEFAULT_SESSION_TYPES).map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}
         </select>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12.5, color: '#D5E0D5' }}>Pillars</span>
+        <span style={{ fontSize: 12.5, color: '#FAFAFA' }}>Pillars</span>
         <select value={pillarTagFilter} onChange={e => setPillarTagFilter(e.target.value)} className={selectStyle}>
           <option value="all">All pillars</option>{(pillarTags || DEFAULT_PILLAR_TAGS).map(p => <option key={p.id || p.name} value={p.id || p.name}>{p.name}</option>)}
         </select>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12.5, color: '#D5E0D5' }}>Mode</span>
+        <span style={{ fontSize: 12.5, color: '#FAFAFA' }}>Mode</span>
         <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} className={selectStyle}>
           <option value="all">All modes</option>{(modes || DEFAULT_MODES).map(m => <option key={m.id || m.name} value={m.name}>{m.name}</option>)}
         </select>
@@ -1553,27 +1590,27 @@ function CalendarView({ sessions, activeWeek, setActiveWeek, hiddenDays, setHidd
   return (
     <div>
       {onSettingsChange && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12, fontSize: 12.5, color: '#003223', background: '#fff', border: '1px solid #DDE2E6', borderRadius: 8, padding: '10px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12, fontSize: 12.5, color: '#FAFAFA', background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: '10px 14px' }}>
           <b>Academy dates</b>
           <label style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Start <input type="date" className={selectStyle} value={academySettings?.startDate || ''} onChange={e => onSettingsChange({ ...academySettings, startDate: e.target.value })} /></label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 5 }}>End <input type="date" className={selectStyle} value={academySettings?.endDate || ''} onChange={e => onSettingsChange({ ...academySettings, endDate: e.target.value })} /></label>
           <span>{weeks && weeks.length ? (academySettings?.startDate ? weeks.length + ' week' + (weeks.length === 1 ? '' : 's') : '') : 'Set both dates to generate the calendar'}</span>
         </div>
       )}
-      {onFellowWeeksChange && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: 12.5, color: '#D5E0D5' }}><b>Participant-visible weeks</b>{weeks.map(w => <label key={w} style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#D5E0D5' }}><input type="checkbox" checked={fellowWeeks.includes(w)} onChange={() => onFellowWeeksChange(fellowWeeks.includes(w) ? fellowWeeks.filter(item => item !== w) : [...fellowWeeks, w])} />W{String(w).padStart(2, '0')}</label>)}</div>}
+      {onFellowWeeksChange && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: 12.5, color: '#FAFAFA' }}><b>Participant-visible weeks</b>{weeks.map(w => <label key={w} style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#FAFAFA' }}><input type="checkbox" checked={fellowWeeks.includes(w)} onChange={() => onFellowWeeksChange(fellowWeeks.includes(w) ? fellowWeeks.filter(item => item !== w) : [...fellowWeeks, w])} />W{String(w).padStart(2, '0')}</label>)}</div>}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         {weeks.map(w => (
           <button key={w} onClick={() => setActiveWeek(w)} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            border: activeWeek === w ? '1px solid #1F6F78' : '1px solid #C9CDD2',
-            background: activeWeek === w ? '#1F6F78' : '#fff', color: activeWeek === w ? '#fff' : '#003223'
+            border: activeWeek === w ? '1px solid #A1A1AA' : '1px solid #52525B',
+            background: activeWeek === w ? '#FAFAFA' : '#27272A', color: activeWeek === w ? '#09090B' : '#A1A1AA'
           }}>Week {String(w).padStart(2, '0')} · {weekLabel(w)}</button>
         ))}
       </div>
       {days.length > 1 && (
         <div style={{ display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap' }}>
           {days.map(([d, wd]) => (
-            <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#D5E0D5', cursor: 'pointer' }}>
+            <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#FAFAFA', cursor: 'pointer' }}>
               <input type="checkbox" checked={!hiddenDays[d]} onChange={() => setHiddenDays(h => ({ ...h, [d]: !h[d] }))} />
               {wd}, {dateLabel(d)}
             </label>
@@ -1581,11 +1618,11 @@ function CalendarView({ sessions, activeWeek, setActiveWeek, hiddenDays, setHidd
         </div>
       )}
       <div className="wa14-cal-scroll-wrap">
-      <div ref={calScrollRef} className="wa14-cal-scroll wa14-floating-scroll"><div className="bg-white rounded-lg border border-[#DDE2E6]" style={{ display: 'flex', width: '100%', minWidth: 'fit-content' }}>
-          <div className="w-14 shrink-0 border-r border-[#EEF0F2] box-border">
-            <div className="h-[46px] border-b border-[#EEF0F2] bg-[#F7F8F9]"></div>
+      <div ref={calScrollRef} className="wa14-cal-scroll wa14-floating-scroll"><div className="bg-[#18181B] rounded-lg border border-[#27272A]" style={{ display: 'flex', width: '100%', minWidth: 'fit-content' }}>
+          <div className="w-14 shrink-0 border-r border-[#27272A] box-border">
+            <div className="h-[46px] border-b border-[#27272A] bg-[#1F1F23]"></div>
             <div className="relative" style={{ height: totalHeight }}>
-              {hours.map(m => (<div key={m} className="absolute right-2 text-[10.5px] text-[#003223]" style={{ top: bandScale.offsets[(m - GRID_START) / 60] - 6 }}>{String(Math.floor(m / 60)).padStart(2, '0')}:00</div>))}
+              {hours.map(m => (<div key={m} className="absolute right-2 text-[10.5px] text-[#A1A1AA]" style={{ top: bandScale.offsets[(m - GRID_START) / 60] - 6 }}>{String(Math.floor(m / 60)).padStart(2, '0')}:00</div>))}
             </div>
           </div>
           {visibleDays.map(([d, wd]) => {
@@ -1594,22 +1631,22 @@ function CalendarView({ sessions, activeWeek, setActiveWeek, hiddenDays, setHidd
             const daySessions = weekSessions.filter(s => s.date === d).sort((a, b) => toMin(a.start) - toMin(b.start));
             const carryOver = prevDay ? weekSessions.filter(s => s.date === prevDay && wrapsMidnight(s)) : [];
             return (
-              <div key={d} className="flex-1 min-w-[150px] border-r border-[#EEF0F2] box-border" style={{ flexShrink: 1, flexGrow: 1, flexBasis: 150 }}>
-                <div className="h-[46px] box-border border-b border-[#EEF0F2] bg-[#F7F8F9] text-[12.5px] font-semibold text-center pt-[5px] text-[#003223]">
-                  {wd}<div className="font-normal text-[#003223] text-[11px] leading-tight">{dateLabel(d)}</div>
+              <div key={d} className="flex-1 min-w-[150px] border-r border-[#27272A] box-border" style={{ flexShrink: 1, flexGrow: 1, flexBasis: 150 }}>
+                <div className="h-[46px] box-border border-b border-[#27272A] bg-[#1F1F23] text-[12.5px] font-semibold text-center pt-[5px] text-[#FAFAFA]">
+                  {wd}<div className="font-normal text-[#A1A1AA] text-[11px] leading-tight">{dateLabel(d)}</div>
                 </div>
                 <div className="relative" style={{ height: totalHeight }} onClick={e => { if (!onPlace || e.target !== e.currentTarget) return; const rect = e.currentTarget.getBoundingClientRect(); const minutes = bandScale.minutesAt(e.clientY - rect.top); const start = String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0'); onPlace(null, d, start); }} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const id = Number(e.dataTransfer.getData('sessionId')); const session = sessions.find(item => item.id === id); if (!session || !onDrop) return; const rect = e.currentTarget.getBoundingClientRect(); const minutes = bandScale.minutesAt(e.clientY - rect.top); const start = String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0'); onDrop(session, d, start); }}>
-                  {hours.map(m => (<div key={m} style={{ position: 'absolute', top: bandScale.offsets[(m - GRID_START) / 60], left: 0, right: 0, borderTop: '1px solid #F2F3F4' }} />))}
+                  {hours.map(m => (<div key={m} style={{ position: 'absolute', top: bandScale.offsets[(m - GRID_START) / 60], left: 0, right: 0, borderTop: '1px solid #27272A' }} />))}
                   {carryOver.map(s => {
                     const height = Math.max(bandScale.y(toMin(s.end)), 16);
                     const color = getTypeColor(s.type, sessionTypes);
                     return (
                       <div key={s.id + '-cont'} draggable={!!onDrop} onDragStart={e => e.dataTransfer.setData('sessionId', String(s.id))} onClick={() => onSelect(s)} style={{
-                        position: 'absolute', top: 0, left: 3, right: 3, height, background: color + '26', borderLeft: '3px solid ' + color,
+                        position: 'absolute', top: 0, left: 3, right: 3, height, background: '#1F1F23', borderLeft: '3px solid ' + color,
                         borderRadius: 4, padding: '3px 6px', cursor: 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, fontStyle: 'italic', opacity: 0.85, overflowWrap: 'breakWord', wordBreak: 'breakWord'
                       }} title={s.name + ' (continued from previous day)'}>
-                        <div style={{ fontWeight: 600, color: '#1B2733' }}>{s.name} <span style={{ fontWeight: 400, color: '#003223' }}>(cont.)</span></div>
-                        {height > 28 && <div style={{ color: '#003223' }}>until {s.end} · {fmtDur(durationMin(s))}</div>}
+                        <div style={{ fontWeight: 600, color: '#FAFAFA' }}>{s.name} <span style={{ fontWeight: 400, color: '#A1A1AA' }}>(cont.)</span></div>
+                        {height > 28 && <div style={{ color: '#FAFAFA' }}>until {s.end} · {fmtDur(durationMin(s))}</div>}
                       </div>
                     );
                   })}
@@ -1620,19 +1657,19 @@ function CalendarView({ sessions, activeWeek, setActiveWeek, hiddenDays, setHidd
                     const color = getTypeColor(s.type, sessionTypes);
                     return (
                       <div key={s.id} draggable={!!onDrop} onDragStart={e => e.dataTransfer.setData('sessionId', String(s.id))} onClick={() => onSelect(s)} style={{
-                        position: 'absolute', top: bandScale.y(start), left: `calc(${col * 100 / cols}% + 2px)`, width: `calc(${100 / cols}% - 4px)`, height, background: color + '26', borderLeft: '3px solid ' + color,
+                        position: 'absolute', top: bandScale.y(start), left: `calc(${col * 100 / cols}% + 2px)`, width: `calc(${100 / cols}% - 4px)`, height, background: '#1F1F23', borderLeft: '3px solid ' + color,
                         borderRadius: 4, padding: '3px 6px', cursor: 'pointer', overflow: 'hidden', fontSize: 10.5, lineHeight: 1.25, boxSizing: 'border-box', overflowWrap: 'breakWord', wordBreak: 'breakWord'
                       }} title={s.name}>
-                        <div style={{ fontWeight: 600, color: '#1B2733' }}>{s.name}</div>
-                        {height > 28 && <div style={{ color: '#003223' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
+                        <div style={{ fontWeight: 600, color: '#FAFAFA' }}>{s.name}</div>
+                        {height > 28 && <div style={{ color: '#FAFAFA' }}>{s.start}–{s.end} · {fmtDur(durationMin(s))}</div>}
                         {height > 42 && s.facilitators && s.facilitators.length > 0 && (
-                          <div style={{ color: '#003223', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><Users size={9} /> {fmtFacilitators(s.facilitators, rooms, staff)}</div>
+                          <div style={{ color: '#FAFAFA', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><Users size={9} /> {fmtFacilitators(s.facilitators, rooms, staff)}</div>
                         )}
                         {height > 56 && ((s.rooms || []).length > 0 || (s.roomIds || []).length > 0) && (
-                          <div style={{ color: '#003223', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><DoorOpen size={9} /> {getVisibleRooms(s, auth, roster, rooms).map(r => r.name + ' · ' + (r.facilitator || 'Facilitator not set')).join(', ') || 'Room not assigned'}</div>
+                          <div style={{ color: '#FAFAFA', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><DoorOpen size={9} /> {getVisibleRooms(s, auth, roster, rooms).map(r => r.name + ' · ' + (r.facilitator || 'Facilitator not set')).join(', ') || 'Room not assigned'}</div>
                         )}
                         {auth.role !== 'fellow' && height > 56 && s.resources && s.resources.length > 0 && (
-                          <div style={{ color: '#003223', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><LinkIcon size={9} /> {s.resources.length} resource{s.resources.length > 1 ? 's' : ''}</div>
+                          <div style={{ color: '#FAFAFA', display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}><LinkIcon size={9} /> {s.resources.length} resource{s.resources.length > 1 ? 's' : ''}</div>
                         )}
                       </div>
                     );
@@ -1662,19 +1699,19 @@ function PlacementPanel({ sessions, initial, onSave, onClose, onAddSession }) {
   const q = search.trim().toLowerCase();
   const filteredSessions = q ? sessions.filter(item => String(item.name || '').toLowerCase().includes(q)) : sessions;
   const selected = sessions.find(item => String(item.id) === String(sessionId));
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 110 }} onClick={onClose}><div onClick={e => e.stopPropagation()} style={{ width: 380, maxWidth: '92vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}>
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 110 }} onClick={onClose}><div onClick={e => e.stopPropagation()} style={{ width: 380, maxWidth: '92vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><div style={{ fontWeight: 700 }}>Place session on calendar</div><button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button></div>
     <Field label="Search sessions"><input className={inputStyle} value={search} onChange={e => setSearch(e.target.value)} placeholder="Type session name…" /></Field>
     {q ? (
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Session</div>
-        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #2A5C4B', borderRadius: 6, background: '#fff' }}>
+        <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Session</div>
+        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #27272A', borderRadius: 6, background: '#18181B' }}>
           {filteredSessions.length === 0 ? (
-            <div style={{ padding: '10px 12px', fontSize: 12.5, color: '#9DB09D' }}>No sessions match “{search.trim()}”.</div>
+            <div style={{ padding: '10px 12px', fontSize: 12.5, color: '#A1A1AA' }}>No sessions match “{search.trim()}”.</div>
           ) : filteredSessions.map(item => (
-            <div key={item.id} onClick={() => setSessionId(item.id)} style={{ padding: '9px 12px', cursor: 'pointer', fontSize: 12.5, borderBottom: '1px solid #EEF0F2', background: String(item.id) === String(sessionId) ? '#E8F0EC' : '#fff', color: '#003223' }}>
+            <div key={item.id} onClick={() => setSessionId(item.id)} style={{ padding: '9px 12px', cursor: 'pointer', fontSize: 12.5, borderBottom: '1px solid #27272A', background: String(item.id) === String(sessionId) ? '#27272A' : 'transparent', color: '#FAFAFA' }}>
               <div style={{ fontWeight: 600 }}>{item.name || '(untitled)'}</div>
-              <div style={{ fontSize: 11.5, color: '#9DB09D' }}>{item.date ? dateLabel(item.date) + (item.week != null ? ' · Week ' + String(item.week).padStart(2, '0') : '') : 'Unscheduled'}</div>
+              <div style={{ fontSize: 11.5, color: '#A1A1AA' }}>{item.date ? dateLabel(item.date) + (item.week != null ? ' · Week ' + String(item.week).padStart(2, '0') : '') : 'Unscheduled'}</div>
             </div>
           ))}
         </div>
@@ -1695,11 +1732,11 @@ function PlacementPanel({ sessions, initial, onSave, onClose, onAddSession }) {
 }
 
 function getTypeColor(name, types) {
-  return (types || []).find(p => p.name === name)?.color || TYPE_COLOR[name] || '#2A5C4B';
+  return (types || []).find(p => p.name === name)?.color || TYPE_COLOR[name] || '#27272A';
 }
 
 function getModeColor(name, modes) {
-  return (modes || []).find(m => m.name === name)?.color || DEFAULT_MODE_COLORS[name] || '#9DB09D';
+  return (modes || []).find(m => m.name === name)?.color || DEFAULT_MODE_COLORS[name] || '#A1A1AA';
 }
 
 function sessionPillarNames(session, pillarTags) {
@@ -1782,16 +1819,16 @@ function MyAttendancePanel({ sessions, attendance, auth }) {
   const pct = eligible.length ? Math.round(attended / eligible.length * 100) : 0;
   const statusOf = session => {
     const rec = myFor(session);
-    if (!attendanceEligible(session)) return { label: 'Not required', color: '#9DB09D' };
-    if (!rec) return { label: 'No record', color: '#9DB09D' };
-    if (rec.status === 'on_time') return { label: 'On time', color: '#2D7A4F' };
-    if (rec.status === 'late') return { label: 'Late', color: '#D0A023' };
-    return { label: rec.status || 'Recorded', color: '#D5E0D5' };
+    if (!attendanceEligible(session)) return { label: 'Not required', color: '#A1A1AA' };
+    if (!rec) return { label: 'No record', color: '#A1A1AA' };
+    if (rec.status === 'on_time') return { label: 'On time', color: '#D4D4D8' };
+    if (rec.status === 'late') return { label: 'Late', color: '#E4E4E7' };
+    return { label: rec.status || 'Recorded', color: '#FAFAFA' };
   };
   return (
     <div style={{ maxWidth: 960 }}>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>My Attendance</div>
-      <div style={{ fontSize: 12.5, color: '#D5E0D5', marginBottom: 16 }}>Per-session attendance for Sync, Workshop, and Clinic sessions. You can mark yourself present within the first 5 minutes (on time) or within 15 minutes from the start (late).</div>
+      <div style={{ fontSize: 12.5, color: '#FAFAFA', marginBottom: 16 }}>Per-session attendance for Sync, Workshop, and Clinic sessions. You can mark yourself present within the first 5 minutes (on time) or within 15 minutes from the start (late).</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, maxWidth: 780, marginBottom: 18 }}>
         <Metric label="Attendance records" value={attended} />
         <Metric label="On time" value={onTime} />
@@ -1799,24 +1836,24 @@ function MyAttendancePanel({ sessions, attendance, auth }) {
         <Metric label="Missed" value={missed} />
         <Metric label="Attendance %" value={pct + '%'} />
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Date', 'Session', 'Time', 'Status', 'Recorded'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+          <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Date', 'Session', 'Time', 'Status', 'Recorded'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
           <tbody>
             {sessions.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || String(b.start || '').localeCompare(String(a.start || ''))).map(session => {
               const rec = myFor(session);
               const st = statusOf(session);
               return (
-                <tr key={session.id} style={{ borderTop: '1px solid #1F4A3C' }}>
+                <tr key={session.id} style={{ borderTop: '1px solid #27272A' }}>
                   <td style={{ padding: '8px 12px' }}>{session.date ? dateLabel(session.date) : '--'}</td>
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{session.name || 'Session'}</td>
                   <td style={{ padding: '8px 12px' }}>{session.start ? session.start + '\u2013' + (session.end || '') : '--'}</td>
                   <td style={{ padding: '8px 12px', color: st.color, fontWeight: 700 }}>{st.label}</td>
-                  <td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{rec && rec.recordedAt ? new Date(rec.recordedAt).toLocaleString() : '--'}</td>
+                  <td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{rec && rec.recordedAt ? new Date(rec.recordedAt).toLocaleString() : '--'}</td>
                 </tr>
               );
             })}
-            {sessions.length === 0 && <tr><td colSpan={5} style={{ padding: 12, color: '#9DB09D' }}>No sessions available yet.</td></tr>}
+            {sessions.length === 0 && <tr><td colSpan={5} style={{ padding: 12, color: '#A1A1AA' }}>No sessions available yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -1843,21 +1880,21 @@ function AttendanceRecordsPanel({ sessions, attendance, roster, onExport }) {
         <Metric label="Participants recorded" value={new Set(records.map(entry => String(entry.fellowId))).size} />
       </div>
       <div style={{ marginBottom: 8, fontWeight: 700 }}>Attendance by session</div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', marginBottom: 18 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', marginBottom: 18 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Date', 'Session', 'On time', 'Late', 'No record', 'Attendance %'].map(h => <th key={h} style={{ padding: 9, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+          <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Date', 'Session', 'On time', 'Late', 'No record', 'Attendance %'].map(h => <th key={h} style={{ padding: 9, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
           <tbody>
             {bySession.map(session => (
-              <tr key={session.id} style={{ borderTop: '1px solid #1F4A3C' }}>
+              <tr key={session.id} style={{ borderTop: '1px solid #27272A' }}>
                 <td style={{ padding: 9 }}>{session.date ? dateLabel(session.date) : '--'}</td>
-                <td style={{ padding: 9, fontWeight: 600 }}>{session.name || 'Session'} {session.start ? <span style={{ fontWeight: 400, color: '#9DB09D' }}>{' \u00B7 '}{session.start}</span> : null}</td>
-                <td style={{ padding: 9, color: '#2D7A4F', fontWeight: 700 }}>{count(session.id, 'on_time')}</td>
-                <td style={{ padding: 9, color: '#D0A023', fontWeight: 700 }}>{count(session.id, 'late')}</td>
+                <td style={{ padding: 9, fontWeight: 600 }}>{session.name || 'Session'} {session.start ? <span style={{ fontWeight: 400, color: '#A1A1AA' }}>{' \u00B7 '}{session.start}</span> : null}</td>
+                <td style={{ padding: 9, color: '#D4D4D8', fontWeight: 700 }}>{count(session.id, 'on_time')}</td>
+                <td style={{ padding: 9, color: '#E4E4E7', fontWeight: 700 }}>{count(session.id, 'late')}</td>
                 <td style={{ padding: 9 }}>{noRecord(session)}</td>
                 <td style={{ padding: 9, fontWeight: 700 }}>{pct(session)}%</td>
               </tr>
             ))}
-            {bySession.length === 0 && <tr><td colSpan={6} style={{ padding: 12, color: '#9DB09D' }}>No eligible Sync, Workshop, or Clinic sessions yet.</td></tr>}
+            {bySession.length === 0 && <tr><td colSpan={6} style={{ padding: 12, color: '#A1A1AA' }}>No eligible Sync, Workshop, or Clinic sessions yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -1884,16 +1921,16 @@ function FellowOverview({ sessions, auth, rooms, attendance, onCheckIn }) {
   };
   const control = session => {
     const rec = myRecord(session);
-    if (rec) return <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: rec.status === 'on_time' ? '#2D7A4F' : '#D0A023' }}>{rec.status === 'on_time' ? 'Attendance recorded \u00B7 on time' : 'Attendance recorded \u00B7 late'}</div>;
-    if (!attendanceEligible(session)) return <div style={{ fontSize: 12, color: '#9DB09D', marginTop: 8 }}>No attendance required for this session</div>;
+    if (rec) return <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: rec.status === 'on_time' ? '#D4D4D8' : '#E4E4E7' }}>{rec.status === 'on_time' ? 'Attendance recorded \u00B7 on time' : 'Attendance recorded \u00B7 late'}</div>;
+    if (!attendanceEligible(session)) return <div style={{ fontSize: 12, color: '#A1A1AA', marginTop: 8 }}>No attendance required for this session</div>;
     const phase = attendancePhase(session, now);
-    if (phase === 'on_time') return <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}><button onClick={() => onCheckIn(session)} className={btnPrimary} style={{ fontWeight: 700 }}><CheckIcon size={14} /> Mark my attendance</button><span style={{ fontSize: 11.5, color: '#9DB09D' }}>{minsLeftTo(session, 5)} min to late window</span></div>;
-    if (phase === 'late') return <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}><button onClick={() => onCheckIn(session)} className={btnSecondary + ' text-[#D0A023]'} style={{ fontWeight: 700 }}>Mark late attendance</button><span style={{ fontSize: 11.5, color: '#D0A023' }}>{minsLeftTo(session, 15)} min left</span></div>;
-    if (phase === 'closed') return <div style={{ fontSize: 12, color: '#9DB09D', marginTop: 8 }}>Attendance window closed (15 minutes from start)</div>;
-    return <div style={{ fontSize: 12, color: '#9DB09D', marginTop: 8 }}>Attendance opens at {session.start}</div>;
+    if (phase === 'on_time') return <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}><button onClick={() => onCheckIn(session)} className={btnPrimary} style={{ fontWeight: 700 }}><CheckIcon size={14} /> Mark my attendance</button><span style={{ fontSize: 11.5, color: '#A1A1AA' }}>{minsLeftTo(session, 5)} min to late window</span></div>;
+    if (phase === 'late') return <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}><button onClick={() => onCheckIn(session)} className={btnSecondary + ' text-[#E4E4E7]'} style={{ fontWeight: 700 }}>Mark late attendance</button><span style={{ fontSize: 11.5, color: '#E4E4E7' }}>{minsLeftTo(session, 15)} min left</span></div>;
+    if (phase === 'closed') return <div style={{ fontSize: 12, color: '#A1A1AA', marginTop: 8 }}>Attendance window closed (15 minutes from start)</div>;
+    return <div style={{ fontSize: 12, color: '#A1A1AA', marginTop: 8 }}>Attendance opens at {session.start}</div>;
   };
-  const card = (label, session) => <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16, flex: 1, minWidth: 220 }}><div style={{ fontSize: 11.5, color: '#9DB09D', fontWeight: 600, marginBottom: 6 }}>{label}</div>{session ? <><div style={{ fontWeight: 700, fontSize: 15 }}>{session.name}</div><div style={{ fontSize: 12.5, color: '#D5E0D5', marginTop: 5 }}>{dateLabel(session.date)}{' \u00B7 '}{session.start}{'\u2013'}{session.end}{' \u00B7 '}{fmtDur(durationMin(session))}</div><div style={{ fontSize: 12.5, color: '#D5E0D5', marginTop: 5 }}>{getVisibleRooms(session, auth, [{ id: auth.fellowId, email: auth.email }], rooms).map(room => room.name + ' \u00B7 ' + (room.physicalLocation || room.meetingUrl || 'Location not set')).join(', ') || 'Location not assigned'}</div>{control(session)}</> : <div style={{ fontSize: 13, color: '#9DB09D' }}>No session</div>}</div>;
-  return <div style={{ marginBottom: 18 }}><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 10 }}>Facilitator group: <b>{auth.afaGroup || 'Not assigned'}</b></div><div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>{card('Current session', current)}{card('Upcoming session', next)}</div></div>;
+  const card = (label, session) => <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16, flex: 1, minWidth: 220 }}><div style={{ fontSize: 11.5, color: '#A1A1AA', fontWeight: 600, marginBottom: 6 }}>{label}</div>{session ? <><div style={{ fontWeight: 700, fontSize: 15 }}>{session.name}</div><div style={{ fontSize: 12.5, color: '#FAFAFA', marginTop: 5 }}>{dateLabel(session.date)}{' \u00B7 '}{session.start}{'\u2013'}{session.end}{' \u00B7 '}{fmtDur(durationMin(session))}</div><div style={{ fontSize: 12.5, color: '#FAFAFA', marginTop: 5 }}>{getVisibleRooms(session, auth, [{ id: auth.fellowId, email: auth.email }], rooms).map(room => room.name + ' \u00B7 ' + (room.physicalLocation || room.meetingUrl || 'Location not set')).join(', ') || 'Location not assigned'}</div>{control(session)}</> : <div style={{ fontSize: 13, color: '#A1A1AA' }}>No session</div>}</div>;
+  return <div style={{ marginBottom: 18 }}><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 10 }}>Facilitator group: <b>{auth.afaGroup || 'Not assigned'}</b></div><div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>{card('Current session', current)}{card('Upcoming session', next)}</div></div>;
 }
 function LegacyFellowAssessments({ assessments, questions, attempts, auth, sessions, onAttemptsChange }) {
   const [activeAttempt, setActiveAttempt] = useState(null);
@@ -1914,8 +1951,8 @@ function LegacyFellowAssessments({ assessments, questions, attempts, auth, sessi
     onAttemptsChange([...attempts, next]); setActiveAttempt(next);
   };
   const saveAnswer = (questionId, value) => { const next = { ...activeAttempt, answers: { ...activeAttempt.answers, [questionId]: value } }; setActiveAttempt(next); onAttemptsChange(attempts.map(attempt => attempt.id === next.id ? next : attempt)); };
-  if (activeAttempt) { const assessment = assessments.find(item => item.id === activeAttempt.assessmentId); const question = (assessment?.questions || questions).find(item => item.id === activeAttempt.questionOrder[activeAttempt.currentIndex]); return <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16, marginBottom: 18, maxWidth: 620 }}><div style={{ fontSize: 12, color: '#9DB09D', marginBottom: 6 }}>{assessment?.title} · Question {activeAttempt.currentIndex + 1} of {activeAttempt.questionOrder.length}</div><div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{question?.text || 'Question unavailable'}</div>{question?.imageUrl && <img src={question.imageUrl} alt="Question" style={{ maxWidth: '100%', maxHeight: 220, objectFit: 'contain', marginBottom: 12 }} />}{question.type === 'paragraph' ? <textarea rows={6} className={inputStyle + ' resize-y'} placeholder="Write your answer here…" value={activeAttempt.answers[question.id] || ''} onChange={event => saveAnswer(question.id, event.target.value)} /> : question?.options?.map(option => <label key={option.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, fontSize: 13 }}><input type={question.type === 'multiple' || question.type === 'check' ? 'checkbox' : 'radio'} name={question.id} checked={Array.isArray(activeAttempt.answers[question.id]) ? activeAttempt.answers[question.id].includes(option.id) : activeAttempt.answers[question.id] === option.id} onChange={event => saveAnswer(question.id, question.type === 'multiple' || question.type === 'check' ? [...(activeAttempt.answers[question.id] || []).filter(item => item !== option.id), ...(event.target.checked ? [option.id] : [])] : option.id)} />{option.text}</label>)}<button onClick={() => { if (activeAttempt.currentIndex + 1 < activeAttempt.questionOrder.length) { const next = { ...activeAttempt, currentIndex: activeAttempt.currentIndex + 1 }; setActiveAttempt(next); onAttemptsChange(attempts.map(attempt => attempt.id === next.id ? next : attempt)); } else { const paragraphReviews = {}; (assessment?.questions || questions).filter(q => q.type === 'paragraph' && activeAttempt.questionOrder.includes(q.id)).forEach(q => { if (!activeAttempt.reviews || !activeAttempt.reviews[q.id]) paragraphReviews[q.id] = { status: 'pending_review', score: null, feedback: '', aiSuggestion: null }; }); const next = { ...activeAttempt, reviews: { ...(activeAttempt.reviews || {}), ...paragraphReviews }, status: 'submitted', submittedAt: new Date().toISOString() }; onAttemptsChange(attempts.map(attempt => attempt.id === next.id ? next : attempt)); setActiveAttempt(null); } }} className={btnPrimary + ' mt-[10px]'}>{activeAttempt.currentIndex + 1 < activeAttempt.questionOrder.length ? 'Next question' : 'Submit assessment'}</button></div>; }
-  return <div style={{ marginBottom: 18 }}><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Active assessments</div>{fellowAssessments.length ? fellowAssessments.map(assessment => <div key={assessment.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, maxWidth: 620, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><b>{assessment.title}</b><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{sessions.find(item => String(item.id) === String(assessment.sessionId))?.name} · {assessment.questionIds?.length || 0} questions</div></div><button onClick={() => start(assessment)} className={btnPrimary}>Start</button></div>) : <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No active assessments.</div>}</div>;
+  if (activeAttempt) { const assessment = assessments.find(item => item.id === activeAttempt.assessmentId); const question = (assessment?.questions || questions).find(item => item.id === activeAttempt.questionOrder[activeAttempt.currentIndex]); return <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16, marginBottom: 18, maxWidth: 620 }}><div style={{ fontSize: 12, color: '#A1A1AA', marginBottom: 6 }}>{assessment?.title} · Question {activeAttempt.currentIndex + 1} of {activeAttempt.questionOrder.length}</div><div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{question?.text || 'Question unavailable'}</div>{question?.imageUrl && <img src={question.imageUrl} alt="Question" style={{ maxWidth: '100%', maxHeight: 220, objectFit: 'contain', marginBottom: 12 }} />}{question.type === 'paragraph' ? <textarea rows={6} className={inputStyle + ' resize-y'} placeholder="Write your answer here…" value={activeAttempt.answers[question.id] || ''} onChange={event => saveAnswer(question.id, event.target.value)} /> : question?.options?.map(option => <label key={option.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, fontSize: 13 }}><input type={question.type === 'multiple' || question.type === 'check' ? 'checkbox' : 'radio'} name={question.id} checked={Array.isArray(activeAttempt.answers[question.id]) ? activeAttempt.answers[question.id].includes(option.id) : activeAttempt.answers[question.id] === option.id} onChange={event => saveAnswer(question.id, question.type === 'multiple' || question.type === 'check' ? [...(activeAttempt.answers[question.id] || []).filter(item => item !== option.id), ...(event.target.checked ? [option.id] : [])] : option.id)} />{option.text}</label>)}<button onClick={() => { if (activeAttempt.currentIndex + 1 < activeAttempt.questionOrder.length) { const next = { ...activeAttempt, currentIndex: activeAttempt.currentIndex + 1 }; setActiveAttempt(next); onAttemptsChange(attempts.map(attempt => attempt.id === next.id ? next : attempt)); } else { const paragraphReviews = {}; (assessment?.questions || questions).filter(q => q.type === 'paragraph' && activeAttempt.questionOrder.includes(q.id)).forEach(q => { if (!activeAttempt.reviews || !activeAttempt.reviews[q.id]) paragraphReviews[q.id] = { status: 'pending_review', score: null, feedback: '', aiSuggestion: null }; }); const next = { ...activeAttempt, reviews: { ...(activeAttempt.reviews || {}), ...paragraphReviews }, status: 'submitted', submittedAt: new Date().toISOString() }; onAttemptsChange(attempts.map(attempt => attempt.id === next.id ? next : attempt)); setActiveAttempt(null); } }} className={btnPrimary + ' mt-[10px]'}>{activeAttempt.currentIndex + 1 < activeAttempt.questionOrder.length ? 'Next question' : 'Submit assessment'}</button></div>; }
+  return <div style={{ marginBottom: 18 }}><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Active assessments</div>{fellowAssessments.length ? fellowAssessments.map(assessment => <div key={assessment.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, maxWidth: 620, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><b>{assessment.title}</b><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{sessions.find(item => String(item.id) === String(assessment.sessionId))?.name} · {assessment.questionIds?.length || 0} questions</div></div><button onClick={() => start(assessment)} className={btnPrimary}>Start</button></div>) : <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No active assessments.</div>}</div>;
 }
 
 function FellowAssessments({ assessments, questions, attempts, auth, sessions, roster, onAttemptsChange, onIncident, deviceRequests, onDeviceRequest, showToast }) {
@@ -1983,9 +2020,9 @@ function FellowAssessments({ assessments, questions, attempts, auth, sessions, r
       const submitted = attempts.find(item => String(item.assessmentId) === String(assessment.id) && String(item.fellowId) === String(auth.fellowId) && item.status === 'submitted');
       const released = isGradeReleased(assessment);
       const score = submitted && released ? (() => { const s = computeAttemptScore(submitted, assessment); return s.total ? Math.round(s.earned / s.total * 100) : 0; })() : null;
-      return <div key={assessment.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, maxWidth: 680, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><b>{assessment.title}</b><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{sessions.find(item => String(item.id) === String(assessment.sessionId))?.name}{assessment.durationMinutes ? ' · ' + assessment.durationMinutes + ' min' : ''}{inProgress ? ' · In progress' : ''}{submitted ? (released ? ' · Graded: ' + score + '%' : ' · Submitted, awaiting grade release') : ''}</div></div><div style={{ display: 'flex', gap: 8 }}>{submitted && released ? <button onClick={() => setView('grades')} className={btnSecondary}>View grade</button> : <button onClick={() => setInstructionFor(assessment.id)} className={btnPrimary}>{inProgress ? 'Resume' : 'Instructions'}</button>}</div></div>;
+      return <div key={assessment.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, maxWidth: 680, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><b>{assessment.title}</b><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{sessions.find(item => String(item.id) === String(assessment.sessionId))?.name}{assessment.durationMinutes ? ' · ' + assessment.durationMinutes + ' min' : ''}{inProgress ? ' · In progress' : ''}{submitted ? (released ? ' · Graded: ' + score + '%' : ' · Submitted, awaiting grade release') : ''}</div></div><div style={{ display: 'flex', gap: 8 }}>{submitted && released ? <button onClick={() => setView('grades')} className={btnSecondary}>View grade</button> : <button onClick={() => setInstructionFor(assessment.id)} className={btnPrimary}>{inProgress ? 'Resume' : 'Instructions'}</button>}</div></div>;
     })}
-    {!available.length && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No active assessments.</div>}
+    {!available.length && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No active assessments.</div>}
     <FellowRecentAttempts attempts={attempts} assessments={assessments} auth={auth} />
   </div>;
 }
@@ -1995,8 +2032,8 @@ function FellowRecentAttempts({ attempts, assessments, auth }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>My recent attempts</div>
-      {!myHistory.length && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No attempts yet.</div>}
-      {myHistory.slice(0, 5).map(item => { const a = assessments.find(x => String(x.id) === String(item.assessmentId)); const st = attemptGradeStatus(item, a); return <div key={item.id} style={{ fontSize: 12.5, background: '#003223', border: '1px solid #1F4A3C', borderRadius: 8, padding: '8px 12px', marginBottom: 6, maxWidth: 680 }}>{a?.title || item.assessmentId} · {st.replace('_', ' ')} · {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : 'In progress'}</div>; })}
+      {!myHistory.length && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No attempts yet.</div>}
+      {myHistory.slice(0, 5).map(item => { const a = assessments.find(x => String(x.id) === String(item.assessmentId)); const st = attemptGradeStatus(item, a); return <div key={item.id} style={{ fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: '8px 12px', marginBottom: 6, maxWidth: 680 }}>{a?.title || item.assessmentId} · {st.replace('_', ' ')} · {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : 'In progress'}</div>; })}
     </div>
   );
 }
@@ -2005,7 +2042,7 @@ function FellowAnalyticsPanel({ sessions, attendance, auth, assessments, attempt
   return (
     <div>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>My analytics</div>
-      <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 16 }}>Your attendance, grades, and recent assessment attempts.</div>
+      <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 16 }}>Your attendance, grades, and recent assessment attempts.</div>
       <MyAttendancePanel sessions={sessions} attendance={attendance} auth={auth} />
       <FellowGradesPanel attempts={attempts} assessments={assessments} auth={auth} roster={roster} onBack={null} />
       <FellowRecentAttempts attempts={attempts} assessments={assessments} auth={auth} />
@@ -2023,8 +2060,8 @@ function AcademyOverviewPanel({ overview, onChange, canEdit }) {
     onChange({ ...data, academyName: form.academyName.trim() || data.academyName, theme: form.theme.trim(), vision: form.vision.trim(), goals: form.goals.split('\n').map(x => x.trim()).filter(Boolean), outcomes: form.outcomes.split('\n').map(x => x.trim()).filter(Boolean), pillars: form.pillars.split('\n').map(x => x.trim()).filter(Boolean) });
     setForm(null);
   };
-  const numbered = list => (list || []).map((item, i) => <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 13 }}><span style={{ color: '#D65641', fontWeight: 700 }}>{i + 1}.</span><span>{item}</span></div>);
-  const section = (title, body) => <><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{title}</div><div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, marginBottom: 16 }}>{body}</div></>;
+  const numbered = list => (list || []).map((item, i) => <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 13 }}><span style={{ color: '#FAFAFA', fontWeight: 700 }}>{i + 1}.</span><span>{item}</span></div>);
+  const section = (title, body) => <><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{title}</div><div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, marginBottom: 16 }}>{body}</div></>;
   if (form) {
     return (
       <div style={{ maxWidth: 720 }}>
@@ -2046,14 +2083,14 @@ function AcademyOverviewPanel({ overview, onChange, canEdit }) {
     <div style={{ maxWidth: 860 }}>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 22, fontWeight: 800 }}>{data.academyName}</div>
-        {data.theme ? <div style={{ fontSize: 14, color: '#D5E0D5', marginTop: 4, fontStyle: 'italic' }}>{data.theme}</div> : null}
+        {data.theme ? <div style={{ fontSize: 14, color: '#FAFAFA', marginTop: 4, fontStyle: 'italic' }}>{data.theme}</div> : null}
         {canEdit && <button onClick={startEdit} className={btnSecondary + ' mt-3'}><Edit size={14} /> Edit overview</button>}
       </div>
       {data.vision ? section('Vision', <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{data.vision}</div>) : null}
       {(data.goals || []).length > 0 ? section('Goals', numbered(data.goals)) : null}
       {(data.outcomes || []).length > 0 ? section('Academy outcomes', numbered(data.outcomes)) : null}
-      {(data.pillars || []).length > 0 ? <><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Pillars</div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>{data.pillars.map((p, i) => <span key={i} style={{ fontSize: 12.5, padding: '5px 12px', borderRadius: 12, background: '#1F4A3C', border: '1px solid #2A5C4B', fontWeight: 600 }}>{p}</span>)}</div></> : null}
-      {!data.vision && !(data.goals || []).length && !(data.pillars || []).length && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No academy overview yet{canEdit ? ' - click Edit overview to add the vision, goals, and pillars.' : '.'}</div>}
+      {(data.pillars || []).length > 0 ? <><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Pillars</div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>{data.pillars.map((p, i) => <span key={i} style={{ fontSize: 12.5, padding: '5px 12px', borderRadius: 12, background: '#27272A', border: '1px solid #27272A', fontWeight: 600 }}>{p}</span>)}</div></> : null}
+      {!data.vision && !(data.goals || []).length && !(data.pillars || []).length && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No academy overview yet{canEdit ? ' - click Edit overview to add the vision, goals, and pillars.' : '.'}</div>}
     </div>
   );
 }
@@ -2096,9 +2133,9 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
         <div style={{ fontSize: 15, fontWeight: 800, marginRight: 'auto' }}>Historical academies</div>
         <button onClick={archiveNow} className={btnPrimary}><CopyIcon size={14} /> Archive current academy</button>
       </div>
-      <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 14 }}>Snapshots of past Winter Academies: session lists with facilitators and resources, calendars, attendance, and assessment data.</div>
-      {archives === null ? <div style={{ fontSize: 12.5, color: '#9DB09D' }}>Loading archives...</div>
-        : archives.length === 0 ? <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No archived academies yet. Use Archive current academy when an academy ends to keep its data for future reference.</div>
+      <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 14 }}>Snapshots of past Winter Academies: session lists with facilitators and resources, calendars, attendance, and assessment data.</div>
+      {archives === null ? <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>Loading archives...</div>
+        : archives.length === 0 ? <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No archived academies yet. Use Archive current academy when an academy ends to keep its data for future reference.</div>
         : <>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             <select value={selectedId} onChange={e => setSelectedId(e.target.value)} className={selectStyle} style={{ minWidth: 260 }} aria-label="Choose archive">
@@ -2109,11 +2146,11 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
           {archive && view === 'sessions' && (
             <>
               <div style={{ marginBottom: 10 }}><button onClick={() => setReuseOpen(true)} className={btnPrimary}><CopyIcon size={14} /> Reuse sessions from this academy</button></div>
-              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 900, borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-                <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Week', 'Date', 'Time', 'Session', 'Facilitators', 'Resources'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 900, borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+                <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Week', 'Date', 'Time', 'Session', 'Facilitators', 'Resources'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
                 <tbody>
                   {sortedSessions.map(s => (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                    <tr key={s.id} style={{ borderBottom: '1px solid #27272A' }}>
                       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.week != null ? 'Week ' + String(s.week).padStart(2, '0') : '--'}</td>
                       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{s.date ? dateLabel(s.date) : '--'}</td>
                       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{s.start ? s.start + ' - ' + (s.end || '') : '--'}</td>
@@ -2122,7 +2159,7 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
                       <td style={{ padding: '8px 12px' }}>{resLabel(s)}</td>
                     </tr>
                   ))}
-                  {!sortedSessions.length && <tr><td colSpan={6} style={{ padding: 12, color: '#9DB09D' }}>No sessions in this archive.</td></tr>}
+                  {!sortedSessions.length && <tr><td colSpan={6} style={{ padding: 12, color: '#A1A1AA' }}>No sessions in this archive.</td></tr>}
                 </tbody>
               </table></div>
             </>
@@ -2134,16 +2171,16 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
             return weekKeys.length ? weekKeys.map(w => (
               <div key={w} style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Week {String(w).padStart(2, '0')}</div>
-                <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
                   {weekMap.get(w).map(s => (
-                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 14px', borderBottom: '1px solid #1F4A3C', flexWrap: 'wrap' }}>
-                      <div><b style={{ fontSize: 12.5 }}>{s.name}</b><div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 2 }}>{s.date ? dateLabel(s.date) : ''}{s.weekday ? ' - ' + s.weekday : ''} - {s.start}-{s.end}</div></div>
-                      <div style={{ fontSize: 11.5, color: '#9DB09D' }}>{facLabel(s)}</div>
+                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 14px', borderBottom: '1px solid #27272A', flexWrap: 'wrap' }}>
+                      <div><b style={{ fontSize: 12.5 }}>{s.name}</b><div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 2 }}>{s.date ? dateLabel(s.date) : ''}{s.weekday ? ' - ' + s.weekday : ''} - {s.start}-{s.end}</div></div>
+                      <div style={{ fontSize: 11.5, color: '#A1A1AA' }}>{facLabel(s)}</div>
                     </div>
                   ))}
                 </div>
               </div>
-            )) : <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No calendared sessions in this archive.</div>;
+            )) : <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No calendared sessions in this archive.</div>;
           })()}
           {archive && view === 'attendance' && (() => {
             const att = archive.attendance || [];
@@ -2158,26 +2195,26 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
                 <button onClick={exportAtt} className={btnSecondary}><Download size={14} /> Export attendance (XLSX)</button>
               </div>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>By session</div>
-              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
-                <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Date', 'Session', 'On time', 'Late'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Date', 'Session', 'On time', 'Late'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
                 <tbody>{sortedSessions.filter(s => bySession.has(String(s.id))).map(s => { const row = bySession.get(String(s.id)); return (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                  <tr key={s.id} style={{ borderBottom: '1px solid #27272A' }}>
                     <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{s.date ? dateLabel(s.date) : '--'}</td>
                     <td style={{ padding: '8px 12px', fontWeight: 500 }}>{s.name}</td>
-                    <td style={{ padding: '8px 12px', color: '#2D7A4F', fontWeight: 700 }}>{row.onTime}</td>
-                    <td style={{ padding: '8px 12px', color: '#D0A023', fontWeight: 700 }}>{row.late}</td>
-                  </tr>); })}{bySession.size === 0 && <tr><td colSpan={4} style={{ padding: 12, color: '#9DB09D' }}>No attendance records in this archive.</td></tr>}</tbody>
+                    <td style={{ padding: '8px 12px', color: '#D4D4D8', fontWeight: 700 }}>{row.onTime}</td>
+                    <td style={{ padding: '8px 12px', color: '#E4E4E7', fontWeight: 700 }}>{row.late}</td>
+                  </tr>); })}{bySession.size === 0 && <tr><td colSpan={4} style={{ padding: 12, color: '#A1A1AA' }}>No attendance records in this archive.</td></tr>}</tbody>
               </table></div>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>By fellow</div>
-              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-                <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Participant', 'Records', 'On time', 'Late'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+                <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Participant', 'Records', 'On time', 'Late'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
                 <tbody>{[...byFellow.values()].sort((a, b) => String(a.name).localeCompare(String(b.name))).map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid #27272A' }}>
                     <td style={{ padding: '8px 12px' }}>{row.name}</td>
                     <td style={{ padding: '8px 12px' }}>{row.total}</td>
-                    <td style={{ padding: '8px 12px', color: '#2D7A4F', fontWeight: 700 }}>{row.onTime}</td>
-                    <td style={{ padding: '8px 12px', color: '#D0A023', fontWeight: 700 }}>{row.late}</td>
-                  </tr>))}{byFellow.size === 0 && <tr><td colSpan={4} style={{ padding: 12, color: '#9DB09D' }}>No attendance records in this archive.</td></tr>}</tbody>
+                    <td style={{ padding: '8px 12px', color: '#D4D4D8', fontWeight: 700 }}>{row.onTime}</td>
+                    <td style={{ padding: '8px 12px', color: '#E4E4E7', fontWeight: 700 }}>{row.late}</td>
+                  </tr>))}{byFellow.size === 0 && <tr><td colSpan={4} style={{ padding: 12, color: '#A1A1AA' }}>No attendance records in this archive.</td></tr>}</tbody>
               </table></div>
             </>;
           })()}
@@ -2188,8 +2225,8 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
                 <Metric label="Assessments" value={list.length} /><Metric label="Questions" value={(archive.assessmentQuestions || []).length} /><Metric label="Attempts" value={atts.length} /><Metric label="Submitted" value={atts.filter(a => a.status === 'submitted').length} />
               </div>
-              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-                <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Assessment', 'Questions', 'Attempts', 'Submitted', 'Avg score'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+                <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Assessment', 'Questions', 'Attempts', 'Submitted', 'Avg score'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
                 <tbody>{list.map(a => {
                   const rel = isGradeReleased(a);
                   const mine = atts.filter(x => String(x.assessmentId) === String(a.id));
@@ -2197,14 +2234,14 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
                   const pcts = graded.map(x => { const s = computeAttemptScore(x, a); return s.total ? s.earned / s.total * 100 : null; }).filter(v => v != null);
                   const avg = pcts.length ? Math.round(pcts.reduce((sum, v) => sum + v, 0) / pcts.length) : null;
                   return (
-                    <tr key={a.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                    <tr key={a.id} style={{ borderBottom: '1px solid #27272A' }}>
                       <td style={{ padding: '8px 12px', fontWeight: 500 }}>{a.title || a.id}</td>
                       <td style={{ padding: '8px 12px', textAlign: 'center' }}>{(a.questions || []).length || (a.questionIds || []).length}</td>
                       <td style={{ padding: '8px 12px', textAlign: 'center' }}>{mine.length}</td>
                       <td style={{ padding: '8px 12px', textAlign: 'center' }}>{mine.filter(x => x.status === 'submitted').length}</td>
                       <td style={{ padding: '8px 12px', fontWeight: 700 }}>{avg != null ? avg + '%' : '--'}</td>
                     </tr>);
-                })}{!list.length && <tr><td colSpan={5} style={{ padding: 12, color: '#9DB09D' }}>No assessments in this archive.</td></tr>}</tbody>
+                })}{!list.length && <tr><td colSpan={5} style={{ padding: 12, color: '#A1A1AA' }}>No assessments in this archive.</td></tr>}</tbody>
               </table></div>
             </>;
           })()}
@@ -2213,15 +2250,15 @@ function HistoricalAcademiesPanel({ current, onImportSessions, showToast }) {
             (archive.sessions || []).forEach(s => (s.resources || []).forEach(r => rows.push({ session: s.name, label: r.label || '', url: r.url || '' })));
             const withRes = (archive.sessions || []).filter(s => (s.resources || []).length).length;
             return <>
-              <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 10 }}>{rows.length} resource{rows.length === 1 ? '' : 's'} across {withRes} session{withRes === 1 ? '' : 's'}.</div>
-              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-                <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Session', 'Resource', 'Link'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
+              <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 10 }}>{rows.length} resource{rows.length === 1 ? '' : 's'} across {withRes} session{withRes === 1 ? '' : 's'}.</div>
+              <div className="wa14-table-scroll"><table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+                <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Session', 'Resource', 'Link'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
                 <tbody>{rows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid #27272A' }}>
                     <td style={{ padding: '8px 12px' }}>{r.session}</td>
                     <td style={{ padding: '8px 12px', fontWeight: 500 }}>{r.label || '--'}</td>
-                    <td style={{ padding: '8px 12px' }}>{r.url ? <a href={r.url} target="_blank" rel="noreferrer" style={{ color: '#5FA97E' }}>{r.url.length > 48 ? r.url.slice(0, 48) + '...' : r.url}</a> : '--'}</td>
-                  </tr>))}{!rows.length && <tr><td colSpan={3} style={{ padding: 12, color: '#9DB09D' }}>No resources in this archive.</td></tr>}</tbody>
+                    <td style={{ padding: '8px 12px' }}>{r.url ? <a href={r.url} target="_blank" rel="noreferrer" style={{ color: '#D4D4D8' }}>{r.url.length > 48 ? r.url.slice(0, 48) + '...' : r.url}</a> : '--'}</td>
+                  </tr>))}{!rows.length && <tr><td colSpan={3} style={{ padding: 12, color: '#A1A1AA' }}>No resources in this archive.</td></tr>}</tbody>
               </table></div>
             </>;
           })()}
@@ -2252,24 +2289,24 @@ function ReuseSessionsModal({ archive, onClose, onImport }) {
     onClose();
   };
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 440, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 440, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}><div style={{ fontWeight: 700 }}>Reuse sessions</div><button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button></div>
-        <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 12 }}>Select sessions from {archive.academyName || 'this archive'} to copy into the current academy.</div>
+        <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 12 }}>Select sessions from {archive.academyName || 'this archive'} to copy into the current academy.</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, fontSize: 12.5 }}>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={keepFacilitators} onChange={e => setKeepFacilitators(e.target.checked)} /> Preserve facilitators</label>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={keepResources} onChange={e => setKeepResources(e.target.checked)} /> Preserve resources</label>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={keepDates} onChange={e => setKeepDates(e.target.checked)} /> Keep original dates (otherwise imported unscheduled)</label>
         </div>
         {(archive.sessions || []).map(s => (
-          <label key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #1F4A3C', fontSize: 12.5 }}>
+          <label key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #27272A', fontSize: 12.5 }}>
             <input type="checkbox" checked={selected.includes(String(s.id))} onChange={() => toggle(String(s.id))} style={{ marginTop: 2 }} />
-            <span><b>{s.name || '(untitled)'}</b><br /><span style={{ fontSize: 11.5, color: '#9DB09D' }}>Week {s.week != null ? String(s.week).padStart(2, '0') : '--'}{s.date ? ' - ' + dateLabel(s.date) : ''} - {(s.facilitators || []).length} facilitator{(s.facilitators || []).length === 1 ? '' : 's'} - {(s.resources || []).length} resource{(s.resources || []).length === 1 ? '' : 's'}</span></span>
+            <span><b>{s.name || '(untitled)'}</b><br /><span style={{ fontSize: 11.5, color: '#A1A1AA' }}>Week {s.week != null ? String(s.week).padStart(2, '0') : '--'}{s.date ? ' - ' + dateLabel(s.date) : ''} - {(s.facilitators || []).length} facilitator{(s.facilitators || []).length === 1 ? '' : 's'} - {(s.resources || []).length} resource{(s.resources || []).length === 1 ? '' : 's'}</span></span>
           </label>
         ))}
-        {!(archive.sessions || []).length && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No sessions in this archive.</div>}
+        {!(archive.sessions || []).length && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No sessions in this archive.</div>}
         <button disabled={!selected.length} onClick={doImport} className={btnPrimary + ' w-full justify-center mt-5'} style={{ opacity: selected.length ? 1 : 0.5 }}>Import {selected.length || ''} session{selected.length === 1 ? '' : 's'}</button>
-        <div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 8 }}>Imported sessions appear in the Sessions tab. Without dates, place them on the calendar by dragging.</div>
+        <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 8 }}>Imported sessions appear in the Sessions tab. Without dates, place them on the calendar by dragging.</div>
       </div>
     </div>
   );
@@ -2278,10 +2315,10 @@ function ReuseSessionsModal({ archive, onClose, onImport }) {
 function AssessmentInstruction({ assessment, sessionName, onStart, onBack, resumed }) {
   if (!assessment) return null;
   return (
-    <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 20, marginBottom: 18, maxWidth: 680 }}>
+    <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 20, marginBottom: 18, maxWidth: 680 }}>
       <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{assessment.title}</div>
-      <div style={{ fontSize: 12.5, color: '#D5E0D5', marginBottom: 12 }}>{sessionName || ''}{assessment.durationMinutes ? ' · ' + assessment.durationMinutes + ' minutes, no pause' : ''}{assessment.questions ? ' · ' + assessment.questions.length + ' questions' : ''}</div>
-      <div style={{ fontSize: 12.5, background: '#00402E', border: '1px solid #1F4A3C', borderRadius: 8, padding: 12, marginBottom: 12, lineHeight: 1.6 }}>Please join from a laptop with this window maximized. Copy, paste, and right-click are disabled during the assessment. Do not refresh unless your network or device fails; if you reload, you will resume from the same question and only that question timer resets. Switching devices locks this attempt until staff approve a device change. Screenshots, tab switches, window blur, and resizing are recorded for review.</div>
+      <div style={{ fontSize: 12.5, color: '#FAFAFA', marginBottom: 12 }}>{sessionName || ''}{assessment.durationMinutes ? ' · ' + assessment.durationMinutes + ' minutes, no pause' : ''}{assessment.questions ? ' · ' + assessment.questions.length + ' questions' : ''}</div>
+      <div style={{ fontSize: 12.5, background: '#1F1F23', border: '1px solid #27272A', borderRadius: 8, padding: 12, marginBottom: 12, lineHeight: 1.6 }}>Please join from a laptop with this window maximized. Copy, paste, and right-click are disabled during the assessment. Do not refresh unless your network or device fails; if you reload, you will resume from the same question and only that question timer resets. Switching devices locks this attempt until staff approve a device change. Screenshots, tab switches, window blur, and resizing are recorded for review.</div>
       {assessment.description && <div style={{ fontSize: 13, marginBottom: 12 }}>{assessment.description}</div>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button onClick={onBack} className={btnSecondary}>Back</button><button onClick={onStart} className={btnPrimary}>{resumed ? 'Resume assessment' : 'Start assessment'}</button></div>
     </div>
@@ -2314,8 +2351,8 @@ function ProctoredTaker({ attempt, assessment, auth, onUpdate, onSubmit, onAutoS
   }, [attempt.id]);
   const choose = (value) => onUpdate({ answers: { ...(attempt.answers || {}), [question.id]: value } });
   return (
-    <div className="proctored" style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16, marginBottom: 18, maxWidth: 680 }}>
-      <div style={{ fontSize: 12, color: '#9DB09D', marginBottom: 8 }}>Question {index + 1} of {order.length}{secondsLeft !== null ? ' · ' + Math.floor(secondsLeft / 60) + ':' + String(secondsLeft % 60).padStart(2, '0') + ' left' : ''} · No pause · Copy/paste disabled</div>
+    <div className="proctored" style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16, marginBottom: 18, maxWidth: 680 }}>
+      <div style={{ fontSize: 12, color: '#A1A1AA', marginBottom: 8 }}>Question {index + 1} of {order.length}{secondsLeft !== null ? ' · ' + Math.floor(secondsLeft / 60) + ':' + String(secondsLeft % 60).padStart(2, '0') + ' left' : ''} · No pause · Copy/paste disabled</div>
       <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{question?.text || 'Question unavailable'}</div>
       {question?.type === 'paragraph'
         ? <textarea rows={6} className={inputStyle + ' resize-y'} value={answer || ''} placeholder="Write your answer here…" onChange={event => choose(event.target.value)} onCopy={e => e.preventDefault()} onCut={e => e.preventDefault()} onPaste={e => e.preventDefault()} onContextMenu={e => e.preventDefault()} />
@@ -2367,15 +2404,15 @@ function FellowGradesPanelInner({ attempts, assessments, auth, roster, onBack })
         <div style={{ fontSize: 14, fontWeight: 800 }}>My grades {totalPossible ? `· ${totalEarned}/${totalPossible} total` : ''}</div>
         {onBack && <button onClick={onBack} className={btnSecondary}>Back to assessments</button>}
       </div>
-      {!rows.length && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No submitted assessments yet.</div>}
+      {!rows.length && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No submitted assessments yet.</div>}
       {rows.map(row => (
-        <div key={row.attempt.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, marginBottom: 10, maxWidth: 760 }}>
+        <div key={row.attempt.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, marginBottom: 10, maxWidth: 760 }}>
           <div style={{ fontWeight: 800 }}>{row.assessment.title}</div>
-          <div style={{ fontSize: 12.5, color: '#D5E0D5', marginTop: 4 }}>{row.released ? (row.status === 'graded' ? `Score: ${row.score.earned}/${row.score.total} (${row.pct}%)` : 'Submitted, waiting for staff review') : 'Submitted, grades not released yet'}</div>
+          <div style={{ fontSize: 12.5, color: '#FAFAFA', marginTop: 4 }}>{row.released ? (row.status === 'graded' ? `Score: ${row.score.earned}/${row.score.total} (${row.pct}%)` : 'Submitted, waiting for staff review') : 'Submitted, grades not released yet'}</div>
           {row.released && row.detail.map(d => (
-            <div key={d.id} style={{ marginTop: 10, borderTop: '1px solid #1F4A3C', paddingTop: 8 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700 }}>{d.text} <span style={{ color: '#9DB09D' }}>({d.earned}/{d.points})</span></div>
-              {d.feedback && <div style={{ fontSize: 12.5, color: '#D65641', marginTop: 4 }}>Feedback: {d.feedback}</div>}
+            <div key={d.id} style={{ marginTop: 10, borderTop: '1px solid #27272A', paddingTop: 8 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700 }}>{d.text} <span style={{ color: '#A1A1AA' }}>({d.earned}/{d.points})</span></div>
+              {d.feedback && <div style={{ fontSize: 12.5, color: '#FAFAFA', marginTop: 4 }}>Feedback: {d.feedback}</div>}
             </div>
           ))}
         </div>
@@ -2394,11 +2431,11 @@ function IncidentLogPanel({ incidents, attempts, assessments, roster, sessions }
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Assessment incident log</div>
-      <div style={{ fontSize: 12.5, color: '#D5E0D5', marginBottom: 10 }}>Reloads, device changes, screenshots, resizes, tab switches, offline events, and blocked shortcuts.</div>
+      <div style={{ fontSize: 12.5, color: '#FAFAFA', marginBottom: 10 }}>Reloads, device changes, screenshots, resizes, tab switches, offline events, and blocked shortcuts.</div>
       <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter by fellow, assessment, device, type" className={inputStyle} style={{ maxWidth: 380, marginBottom: 10 }} />
-      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-        <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Time', 'Participant', 'Assessment', 'Type', 'Device', 'Details'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
-        <tbody>{rows.map(item => <tr key={item.id} style={{ borderBottom: '1px solid #1F4A3C' }}><td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '--'}</td><td style={{ padding: '8px 12px' }}>{friendlyFellowName({ fellowId: item.fellowId }, roster)}</td><td style={{ padding: '8px 12px' }}>{assessments.find(a => String(a.id) === String(item.assessmentId))?.title || item.assessmentId}</td><td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{item.deviceId || '--'}</td><td style={{ padding: '8px 12px' }}>{item.type}</td><td style={{ padding: '8px 12px' }}>{item.details || '--'}</td></tr>)}{!rows.length && <tr><td colSpan={6} style={{ padding: 14, color: '#9DB09D' }}>No incidents recorded yet.</td></tr>}</tbody>
+      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+        <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Time', 'Participant', 'Assessment', 'Type', 'Device', 'Details'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map(item => <tr key={item.id} style={{ borderBottom: '1px solid #27272A' }}><td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '--'}</td><td style={{ padding: '8px 12px' }}>{friendlyFellowName({ fellowId: item.fellowId }, roster)}</td><td style={{ padding: '8px 12px' }}>{assessments.find(a => String(a.id) === String(item.assessmentId))?.title || item.assessmentId}</td><td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{item.deviceId || '--'}</td><td style={{ padding: '8px 12px' }}>{item.type}</td><td style={{ padding: '8px 12px' }}>{item.details || '--'}</td></tr>)}{!rows.length && <tr><td colSpan={6} style={{ padding: 14, color: '#A1A1AA' }}>No incidents recorded yet.</td></tr>}</tbody>
       </table></div>
     </div>
   );
@@ -2408,7 +2445,7 @@ function DeviceRequestPanel({ requests, attempts, assessments, roster, onResolve
   const pending = (requests || []).filter(r => r.status === 'pending');
   const done = (requests || []).filter(r => r.status !== 'pending').slice().sort((a, b) => String(b.requestedAt || '').localeCompare(String(a.requestedAt || '')));
   const row = (r) => (
-    <tr key={r.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
+    <tr key={r.id} style={{ borderBottom: '1px solid #27272A' }}>
       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{r.requestedAt ? new Date(r.requestedAt).toLocaleString() : '--'}</td>
       <td style={{ padding: '8px 12px' }}>{friendlyFellowName({ fellowId: r.fellowId }, roster)}</td>
       <td style={{ padding: '8px 12px' }}>{assessments.find(a => String(a.id) === String(r.assessmentId))?.title || r.assessmentId}</td>
@@ -2420,16 +2457,16 @@ function DeviceRequestPanel({ requests, attempts, assessments, roster, onResolve
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Device change requests</div>
-      <div style={{ fontSize: 12.5, color: '#D5E0D5', marginBottom: 10 }}>Approve a request to let a fellow resume an in-progress locked assessment from a new device. Answers are preserved; the current-question timer resets.</div>
+      <div style={{ fontSize: 12.5, color: '#FAFAFA', marginBottom: 10 }}>Approve a request to let a fellow resume an in-progress locked assessment from a new device. Answers are preserved; the current-question timer resets.</div>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pending ({pending.length})</div>
-      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-        <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Requested', 'Participant', 'Assessment', 'Devices', 'Status', 'Action'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
-        <tbody>{pending.map(row)}{!pending.length && <tr><td colSpan={6} style={{ padding: 14, color: '#9DB09D' }}>No pending requests.</td></tr>}</tbody>
+      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+        <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Requested', 'Participant', 'Assessment', 'Devices', 'Status', 'Action'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
+        <tbody>{pending.map(row)}{!pending.length && <tr><td colSpan={6} style={{ padding: 14, color: '#A1A1AA' }}>No pending requests.</td></tr>}</tbody>
       </table></div>
       <div style={{ fontSize: 13, fontWeight: 700, margin: '14px 0 8px' }}>Resolved</div>
-      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-        <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Requested', 'Participant', 'Assessment', 'Devices', 'Status', 'Resolved'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>{h}</th>)}</tr></thead>
-        <tbody>{done.map(row)}{!done.length && <tr><td colSpan={6} style={{ padding: 14, color: '#9DB09D' }}>No resolved requests.</td></tr>}</tbody>
+      <div className="wa14-table-scroll"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+        <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Requested', 'Participant', 'Assessment', 'Devices', 'Status', 'Resolved'].map(h => <th key={h} style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>{h}</th>)}</tr></thead>
+        <tbody>{done.map(row)}{!done.length && <tr><td colSpan={6} style={{ padding: 14, color: '#A1A1AA' }}>No resolved requests.</td></tr>}</tbody>
       </table></div>
     </div>
   );
@@ -2486,10 +2523,10 @@ function FloatingScrollbar({ targetRef }) {
     window.addEventListener('pointerup', up);
   };
   return (
-    <div ref={trackRef} onPointerDown={jump} style={{ position: 'sticky', bottom: 0, zIndex: 30, height: 14, display: 'flex', alignItems: 'center', background: 'rgba(37,38,37,0.55)', cursor: 'pointer', userSelect: 'none' }}>
+    <div ref={trackRef} onPointerDown={jump} style={{ position: 'sticky', bottom: 0, zIndex: 30, height: 14, display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,.55)', cursor: 'pointer', userSelect: 'none' }}>
       <div style={{ position: 'relative', width: '100%', height: 6 }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderRadius: 3, background: 'rgba(37,38,37,0.4)' }} />
-        <div onPointerDown={thumbDown} style={{ position: 'absolute', top: 0, height: 6, borderRadius: 3, background: '#1F6F78', left: `calc(${state.pos * (100 - Math.max(state.size * 100, 20))}% )`, width: Math.max(state.size * 100, 20) + '%', cursor: 'grab' }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderRadius: 3, background: 'rgba(0,0,0,.4)' }} />
+        <div onPointerDown={thumbDown} style={{ position: 'absolute', top: 0, height: 6, borderRadius: 3, background: '#A1A1AA', left: `calc(${state.pos * (100 - Math.max(state.size * 100, 20))}% )`, width: Math.max(state.size * 100, 20) + '%', cursor: 'grab' }} />
       </div>
     </div>
   );
@@ -2527,35 +2564,35 @@ function DashboardPanel({ sessions, staff, modes, auth, isFullAdmin, rooms, onSe
     return named.join(', ') || 'Room not assigned';
   };
   const row = s => (
-    <div key={s.id} onClick={() => onSelect && onSelect(s)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid #1F4A3C', cursor: onSelect ? 'pointer' : 'default', flexWrap: 'wrap' }}>
+    <div key={s.id} onClick={() => onSelect && onSelect(s)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid #27272A', cursor: onSelect ? 'pointer' : 'default', flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 600 }}>{s.name}</div>
-        <div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 3 }}>{dateLabel(s.date)} · {s.weekday} · {s.start}–{s.end} · {fmtDur(durationMin(s))} · {roomLabel(s)}</div>
+        <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 3 }}>{dateLabel(s.date)} · {s.weekday} · {s.start}–{s.end} · {fmtDur(durationMin(s))} · {roomLabel(s)}</div>
       </div>
-      <div style={{ fontSize: 12, color: '#9DB09D', whiteSpace: 'nowrap' }}>{sessionDateTime(s, 'start').toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</div>
+      <div style={{ fontSize: 12, color: '#A1A1AA', whiteSpace: 'nowrap' }}>{sessionDateTime(s, 'start').toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</div>
     </div>
   );
   return (
     <div style={{ maxWidth: 1000 }}>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Dashboard</div>
-      <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 18 }}>Sessions in the next 24 hours, staff load, and work-mode hours.</div>
+      <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 18 }}>Sessions in the next 24 hours, staff load, and work-mode hours.</div>
 
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#D5E0D5' }}>Upcoming sessions (next 24 hours)</div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', marginBottom: 24 }}>
-        {upcoming.length === 0 ? <div style={{ padding: 14, fontSize: 12.5, color: '#D5E0D5' }}>No sessions in the next 24 hours.</div> : upcoming.map(row)}
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>Upcoming sessions (next 24 hours)</div>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', marginBottom: 24 }}>
+        {upcoming.length === 0 ? <div style={{ padding: 14, fontSize: 12.5, color: '#FAFAFA' }}>No sessions in the next 24 hours.</div> : upcoming.map(row)}
       </div>
 
 
 
       {isFullAdmin && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#D5E0D5' }}>Sessions per staff</div>
-          <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', marginBottom: 24, maxWidth: 620 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>Sessions per staff</div>
+          <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', marginBottom: 24, maxWidth: 620 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-              <thead><tr style={{ background: '#00402E', textAlign: 'left' }}><th style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Staff</th><th style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Sessions</th></tr></thead>
+              <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}><th style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Staff</th><th style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Sessions</th></tr></thead>
               <tbody>{counts.map(c => (
-                <tr key={String(c.person.id)} style={{ borderTop: '1px solid #1F4A3C' }}>
-                  <td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{c.person.name}{c.person.callSign ? ' · ' + String(c.person.callSign).toUpperCase() : ''}</td>
+                <tr key={String(c.person.id)} style={{ borderTop: '1px solid #27272A' }}>
+                  <td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{c.person.name}{c.person.callSign ? ' · ' + String(c.person.callSign).toUpperCase() : ''}</td>
                   <td style={{ padding: '8px 12px', fontWeight: 700 }}>{c.count}</td>
                 </tr>
               ))}</tbody>
@@ -2564,24 +2601,24 @@ function DashboardPanel({ sessions, staff, modes, auth, isFullAdmin, rooms, onSe
         </>
       )}
 
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#D5E0D5' }}>Work modes — calendared sessions & assigned hours</div>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>Work modes — calendared sessions & assigned hours</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
         {modeNames.map(m => (
-          <div key={m} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: '14px 16px' }}>
-            <div style={{ fontSize: 12.5, color: '#D5E0D5', fontWeight: 600, marginBottom: 8 }}>{m}</div>
+          <div key={m} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 12.5, color: '#FAFAFA', fontWeight: 600, marginBottom: 8 }}>{m}</div>
             <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 3 }}>{fmtDur(totals[m].minutes)}</div>
-            <div style={{ fontSize: 11.5, color: '#9DB09D' }}>{totals[m].count} calendared session{totals[m].count === 1 ? '' : 's'}</div>
+            <div style={{ fontSize: 11.5, color: '#A1A1AA' }}>{totals[m].count} calendared session{totals[m].count === 1 ? '' : 's'}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#D5E0D5' }}>My sessions{me && mySessions.length ? ' (' + mySessions.length + ')' : ''}</div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden' }}>
-        {!me ? <div style={{ padding: 14, fontSize: 12.5, color: '#9DB09D' }}>No staff record matches your account.</div>
-          : myUpcoming.length === 0 ? <div style={{ padding: 14, fontSize: 12.5, color: '#9DB09D' }}>No upcoming sessions assigned to you.</div>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#FAFAFA' }}>My sessions{me && mySessions.length ? ' (' + mySessions.length + ')' : ''}</div>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden' }}>
+        {!me ? <div style={{ padding: 14, fontSize: 12.5, color: '#A1A1AA' }}>No staff record matches your account.</div>
+          : myUpcoming.length === 0 ? <div style={{ padding: 14, fontSize: 12.5, color: '#A1A1AA' }}>No upcoming sessions assigned to you.</div>
           : myUpcoming.map(row)}
       </div>
-      {me && myPastCount > 0 && <div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 8 }}>{myPastCount} past assigned session{myPastCount === 1 ? '' : 's'} not shown.</div>}
+      {me && myPastCount > 0 && <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 8 }}>{myPastCount} past assigned session{myPastCount === 1 ? '' : 's'} not shown.</div>}
     </div>
   );
 }
@@ -2591,35 +2628,35 @@ function LegendPanel({ sessionTypes, staff, cityCodes }) {
   const people = [...(staff || []), SUPERADMIN_ACCOUNT];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, maxWidth: 1100 }}>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18 }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Session types</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {types.map(t => (
             <div key={String(t.id) + (t.name || '')} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
               <span style={{ width: 14, height: 14, borderRadius: 3, background: getTypeColor(t.name, types), flexShrink: 0 }} />
-              <span style={{ color: '#D5E0D5' }}>{t.name}</span>
+              <span style={{ color: '#FAFAFA' }}>{t.name}</span>
             </div>
           ))}
         </div>
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18 }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Facilitators</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {people.map(p => (
             <div key={String(p.id) + (p.name || '')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
-              <span style={{ color: '#D5E0D5' }}>{p.name || ''}</span>
+              <span style={{ color: '#FAFAFA' }}>{p.name || ''}</span>
               <span style={callSignChipStyle}>{p.callSign || callSignFromName(p.name)}</span>
             </div>
           ))}
         </div>
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18 }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Regions</div>
-        {!(cityCodes || []).length ? <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No region call signs yet.</div> : (
+        {!(cityCodes || []).length ? <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No region call signs yet.</div> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(cityCodes || []).map(c => (
               <div key={String(c.id) + (c.city || '')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
-                <span style={{ color: '#D5E0D5' }}>{c.city}</span>
+                <span style={{ color: '#FAFAFA' }}>{c.city}</span>
                 <span style={callSignChipStyle}>{c.code}</span>
               </div>
             ))}
@@ -2636,7 +2673,7 @@ function SessionsTable({ sessions, search, setSearch, weekFilter, setWeekFilter,
   const facilitatorOptions = [...new Set(sessions.flatMap(s => fmtFacilitators(s.facilitators, rooms, staff).split(', ')).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   const roomOptions = [...new Set(sessions.flatMap(roomNamesOf))].filter(Boolean).sort((a, b) => a.localeCompare(b));
   const tableScrollRef = useRef(null);
-  const fav = ok => <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>{ok ? <CheckIcon size={14} color="#5FA97E" weight="bold" /> : <X size={14} color="#D65641" weight="bold" />}</span>;
+  const fav = ok => <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>{ok ? <CheckIcon size={14} color="#D4D4D8" weight="bold" /> : <X size={14} color="#FAFAFA" weight="bold" />}</span>;
   const [facilitatorFilter, setFacilitatorFilter] = useState('all');
   const [roomFilter, setRoomFilter] = useState('all');
   const rows = useMemo(() => {
@@ -2656,22 +2693,22 @@ function SessionsTable({ sessions, search, setSearch, weekFilter, setWeekFilter,
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search sessions by name" className={inputStyle + ' w-[260px]! max-w-full'} aria-label="Search sessions by name" />
         <select value={facilitatorFilter} onChange={e => setFacilitatorFilter(e.target.value)} className={selectStyle} aria-label="Filter by facilitator"><option value="all">All facilitators</option>{facilitatorOptions.map(name => <option key={name} value={name}>{name}</option>)}</select>
         <select value={roomFilter} onChange={e => setRoomFilter(e.target.value)} className={selectStyle} aria-label="Filter by room"><option value="all">All rooms</option>{roomOptions.map(name => <option key={name} value={name}>{name}</option>)}</select>
-        <span style={{ fontSize: 13, color: '#D5E0D5' }}>Week</span>
+        <span style={{ fontSize: 13, color: '#FAFAFA' }}>Week</span>
         <select value={weekFilter} onChange={e => setWeekFilter(e.target.value)} className={selectStyle}>
           <option value="all">All weeks</option>{(weeks || WEEKS).map(w => <option key={w} value={w}>Week {String(w).padStart(2, '0')}</option>)}<option value="unscheduled">Unscheduled</option>
         </select>
-        <span style={{ fontSize: 12.5, color: '#9DB09D' }}>{rows.length} sessions</span>
+        <span style={{ fontSize: 12.5, color: '#A1A1AA' }}>{rows.length} sessions</span>
       </div>
-      <div className="wa14-table-scroll-wrap"><div ref={tableScrollRef} className="wa14-table-scroll wa14-floating-scroll" style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8 }}>
+      <div className="wa14-table-scroll-wrap"><div ref={tableScrollRef} className="wa14-table-scroll wa14-floating-scroll" style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8 }}>
         <table style={{ width: '100%', minWidth: 1080, borderCollapse: 'collapse', fontSize: 12.5, tableLayout: 'fixed' }}>
           <colgroup><col style={{ width: 76 }} /><col style={{ width: 110 }} /><col style={{ width: 110 }} /><col /><col style={{ width: 60 }} /><col style={{ width: 64 }} /><col style={{ width: 72 }} /><col style={{ width: 92 }} /><col style={{ width: 80 }} /><col style={{ width: 186 }} /></colgroup>
-          <thead><tr style={{ background: '#00402E', textAlign: 'left' }}>{['Week', 'Date', 'Time', 'Session', 'Type', 'Mode', 'Pillars', 'Facilitators', 'Outcomes', ''].map(h => (<th key={h} style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B', textAlign: h === 'Type' || h === 'Mode' || h === 'Pillars' || h === 'Facilitators' || h === 'Outcomes' ? 'center' : 'left' }}>{h}</th>))}</tr></thead>
+          <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}>{['Week', 'Date', 'Time', 'Session', 'Type', 'Mode', 'Pillars', 'Facilitators', 'Outcomes', ''].map(h => (<th key={h} style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A', textAlign: h === 'Type' || h === 'Mode' || h === 'Pillars' || h === 'Facilitators' || h === 'Outcomes' ? 'center' : 'left' }}>{h}</th>))}</tr></thead>
           <tbody>
             {rows.map(s => (
-              <tr key={s.id} onClick={() => onView && onView(s)} style={{ borderBottom: '1px solid #1F4A3C', cursor: onView ? 'pointer' : 'default' }}>
-                <td style={{ padding: '8px 12px', color: '#D5E0D5', whiteSpace: 'nowrap', fontWeight: 600 }}>{displayedWeek(s) != null ? 'Week ' + String(displayedWeek(s)).padStart(2, '0') : '--'}</td>
-                <td style={{ padding: '8px 12px', color: '#D5E0D5', whiteSpace: 'nowrap' }}>{s.date ? dateLabel(s.date) : '--'}</td>
-                <td style={{ padding: '8px 12px', color: '#D5E0D5', whiteSpace: 'nowrap' }}>{s.start ? s.start + ' - ' + s.end : '--'}</td>
+              <tr key={s.id} onClick={() => onView && onView(s)} style={{ borderBottom: '1px solid #27272A', cursor: onView ? 'pointer' : 'default' }}>
+                <td style={{ padding: '8px 12px', color: '#FAFAFA', whiteSpace: 'nowrap', fontWeight: 600 }}>{displayedWeek(s) != null ? 'Week ' + String(displayedWeek(s)).padStart(2, '0') : '--'}</td>
+                <td style={{ padding: '8px 12px', color: '#FAFAFA', whiteSpace: 'nowrap' }}>{s.date ? dateLabel(s.date) : '--'}</td>
+                <td style={{ padding: '8px 12px', color: '#FAFAFA', whiteSpace: 'nowrap' }}>{s.start ? s.start + ' - ' + s.end : '--'}</td>
                 <td style={{ padding: '8px 12px', fontWeight: 500 }}>{s.name || '(untitled)'}</td>
                 <td style={{ padding: '8px 12px', textAlign: 'center' }}>{fav(Boolean(s.type))}</td>
                 <td style={{ padding: '8px 12px', textAlign: 'center' }}>{fav(Boolean(s.mode))}</td>
@@ -2681,7 +2718,7 @@ function SessionsTable({ sessions, search, setSearch, weekFilter, setWeekFilter,
                 <td onClick={e => e.stopPropagation()} style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button onClick={() => onEdit(s)} style={linkBtn}>Edit</button>
                   <button onClick={() => onDuplicate(s)} style={{ ...linkBtn, marginLeft: 10 }}>Duplicate</button>
-                  <button onClick={() => { if (window.confirm('Delete this session?')) onDelete(s.id); }} style={{ ...linkBtn, color: '#D0A023', marginLeft: 10 }}>Delete</button>
+                  <button onClick={() => { if (window.confirm('Delete this session?')) onDelete(s.id); }} style={{ ...linkBtn, color: '#E4E4E7', marginLeft: 10 }}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -2696,12 +2733,12 @@ function SessionsTable({ sessions, search, setSearch, weekFilter, setWeekFilter,
 function AssignmentPanel({ session, rooms, onSave, onClose }) {
   const [selected, setSelected] = useState(session.roomIds || []);
   const toggle = id => setSelected(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
-    <div onClick={e => e.stopPropagation()} style={{ width: 360, maxWidth: '92vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}>
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
+    <div onClick={e => e.stopPropagation()} style={{ width: 360, maxWidth: '92vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><div style={{ fontWeight: 700 }}>Assign session</div><button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button></div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{session.name}</div><div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 18 }}>Calendar placement is changed by dragging the session. Choose rooms here or from Sessions.</div>
-      {rooms.map(room => <label key={room.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1F4A3C', fontSize: 13 }}><input type="checkbox" checked={selected.includes(room.id)} onChange={() => toggle(room.id)} /><span><b>{room.name}</b><br /><span style={{ fontSize: 11.5, color: '#9DB09D' }}>{room.facilitator || 'Facilitator not set'}</span></span></label>)}
-      {rooms.length === 0 && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>Create rooms in the Rooms tab first.</div>}
+      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{session.name}</div><div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 18 }}>Calendar placement is changed by dragging the session. Choose rooms here or from Sessions.</div>
+      {rooms.map(room => <label key={room.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #27272A', fontSize: 13 }}><input type="checkbox" checked={selected.includes(room.id)} onChange={() => toggle(room.id)} /><span><b>{room.name}</b><br /><span style={{ fontSize: 11.5, color: '#A1A1AA' }}>{room.facilitator || 'Facilitator not set'}</span></span></label>)}
+      {rooms.length === 0 && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>Create rooms in the Rooms tab first.</div>}
       <button onClick={() => onSave({ ...session, roomIds: selected })} className={btnPrimary + ' w-full justify-center mt-5'}>Save assignments</button>
     </div>
   </div>;
@@ -2712,15 +2749,15 @@ function RoomsPanel({ rooms, roster, onChange, showToast }) {
   const emptyRoom = () => ({ id: 'room' + Date.now(), name: '', facilitator: '', locationType: 'physical', physicalLocation: '', onlinePlatform: '', meetingUrl: '', accessInstructions: '', fellowIds: [] });
   const save = room => { if (!room.name.trim()) return; onChange(rooms.some(item => item.id === room.id) ? rooms.map(item => item.id === room.id ? room : item) : [...rooms, room]); setDraft(null); showToast('Room saved'); };
   const toggleFellow = id => setDraft(room => ({ ...room, fellowIds: (room.fellowIds || []).includes(id) ? room.fellowIds.filter(item => item !== id) : [...(room.fellowIds || []), id] }));
-  return <div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>Create and edit rooms, assign Participants, and add physical or online locations.</div><button onClick={() => setDraft(emptyRoom())} className={btnPrimary + ' mb-[18px]'}><Plus size={14} /> Add room</button>{draft && <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18, maxWidth: 560, marginBottom: 18 }}><Field label="Room name"><input className={inputStyle} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Room A" /></Field><Field label="Facilitator"><input className={inputStyle} value={draft.facilitator} onChange={e => setDraft({ ...draft, facilitator: e.target.value })} placeholder="Facilitator name" /></Field><Field label="Location type"><select className={inputStyle} value={draft.locationType || 'physical'} onChange={e => setDraft({ ...draft, locationType: e.target.value })}><option value="physical">Physical</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></Field>{draft.locationType !== 'online' && <Field label="Physical location"><input className={inputStyle} value={draft.physicalLocation || ''} onChange={e => setDraft({ ...draft, physicalLocation: e.target.value })} placeholder="Building, floor, or room location" /></Field>}{draft.locationType !== 'physical' && <><Field label="Online platform"><input className={inputStyle} value={draft.onlinePlatform || ''} onChange={e => setDraft({ ...draft, onlinePlatform: e.target.value })} placeholder="Zoom or Google Meet" /></Field><Field label="Meeting URL"><input type="url" className={inputStyle} value={draft.meetingUrl || ''} onChange={e => setDraft({ ...draft, meetingUrl: e.target.value })} placeholder="https://..." /></Field><Field label="Access instructions"><textarea className={inputStyle + ' resize-y'} rows={2} value={draft.accessInstructions || ''} onChange={e => setDraft({ ...draft, accessInstructions: e.target.value })} /></Field></>}<Field label="Participants"><div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 12px' }}>{roster.map(f => <label key={f.id} style={{ fontSize: 12 }}><input type="checkbox" checked={(draft.fellowIds || []).includes(f.id)} onChange={() => toggleFellow(f.id)} /> {f.name}</label>)}</div></Field><div style={{ display: 'flex', gap: 8 }}><button onClick={() => save(draft)} className={btnPrimary}>Save room</button><button onClick={() => setDraft(null)} className={btnGhost}>Cancel</button></div></div>}{rooms.map(room => <div key={room.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, marginBottom: 8, maxWidth: 560 }}><b>{room.name}</b><div style={{ fontSize: 12, color: '#D5E0D5' }}>{room.facilitator || 'Facilitator not set'} · {room.locationType || 'physical'} · {room.physicalLocation || room.meetingUrl || 'Location not set'} · {(room.fellowIds || []).length} Participants</div><button onClick={() => setDraft({ ...room })} style={{ ...linkBtn, marginTop: 8 }}>Edit</button><button onClick={() => onChange(rooms.filter(r => r.id !== room.id))} style={{ ...linkBtn, color: '#D0A023', marginTop: 8, marginLeft: 12 }}>Delete</button></div>)}</div>;
+  return <div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>Create and edit rooms, assign Participants, and add physical or online locations.</div><button onClick={() => setDraft(emptyRoom())} className={btnPrimary + ' mb-[18px]'}><Plus size={14} /> Add room</button>{draft && <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18, maxWidth: 560, marginBottom: 18 }}><Field label="Room name"><input className={inputStyle} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Room A" /></Field><Field label="Facilitator"><input className={inputStyle} value={draft.facilitator} onChange={e => setDraft({ ...draft, facilitator: e.target.value })} placeholder="Facilitator name" /></Field><Field label="Location type"><select className={inputStyle} value={draft.locationType || 'physical'} onChange={e => setDraft({ ...draft, locationType: e.target.value })}><option value="physical">Physical</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></Field>{draft.locationType !== 'online' && <Field label="Physical location"><input className={inputStyle} value={draft.physicalLocation || ''} onChange={e => setDraft({ ...draft, physicalLocation: e.target.value })} placeholder="Building, floor, or room location" /></Field>}{draft.locationType !== 'physical' && <><Field label="Online platform"><input className={inputStyle} value={draft.onlinePlatform || ''} onChange={e => setDraft({ ...draft, onlinePlatform: e.target.value })} placeholder="Zoom or Google Meet" /></Field><Field label="Meeting URL"><input type="url" className={inputStyle} value={draft.meetingUrl || ''} onChange={e => setDraft({ ...draft, meetingUrl: e.target.value })} placeholder="https://..." /></Field><Field label="Access instructions"><textarea className={inputStyle + ' resize-y'} rows={2} value={draft.accessInstructions || ''} onChange={e => setDraft({ ...draft, accessInstructions: e.target.value })} /></Field></>}<Field label="Participants"><div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 12px' }}>{roster.map(f => <label key={f.id} style={{ fontSize: 12 }}><input type="checkbox" checked={(draft.fellowIds || []).includes(f.id)} onChange={() => toggleFellow(f.id)} /> {f.name}</label>)}</div></Field><div style={{ display: 'flex', gap: 8 }}><button onClick={() => save(draft)} className={btnPrimary}>Save room</button><button onClick={() => setDraft(null)} className={btnGhost}>Cancel</button></div></div>}{rooms.map(room => <div key={room.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, marginBottom: 8, maxWidth: 560 }}><b>{room.name}</b><div style={{ fontSize: 12, color: '#FAFAFA' }}>{room.facilitator || 'Facilitator not set'} · {room.locationType || 'physical'} · {room.physicalLocation || room.meetingUrl || 'Location not set'} · {(room.fellowIds || []).length} Participants</div><button onClick={() => setDraft({ ...room })} style={{ ...linkBtn, marginTop: 8 }}>Edit</button><button onClick={() => onChange(rooms.filter(r => r.id !== room.id))} style={{ ...linkBtn, color: '#E4E4E7', marginTop: 8, marginLeft: 12 }}>Delete</button></div>)}</div>;
 }
 
 function SessionTypesPanel({ sessionTypes, onChange, showToast }) {
   const list = sessionTypes || [];
-  const [name, setName] = useState(''); const [color, setColor] = useState('#D65641');
+  const [name, setName] = useState(''); const [color, setColor] = useState('#A1A1AA');
   const save = e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'type' + Date.now(), name: name.trim(), color }]); setName(''); showToast('Session type added'); };
   const update = (id, key, value) => onChange(list.map(p => p.id === id ? { ...p, [key]: value } : p));
-  return <div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>Edit session type names and colors or add new types. The type is the color-coded category shown on the calendar.</div><form onSubmit={save} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New session type name" /><input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ width: 42, height: 35 }} /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 10 }}><input className={inputStyle} value={p.name} onChange={e => update(p.id, 'name', e.target.value)} /><input type="color" value={p.color} onChange={e => update(p.id, 'color', e.target.value)} style={{ width: 42, height: 35 }} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div>)}</div></div>;
+  return <div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>Edit session type names and colors or add new types. The type is the color-coded category shown on the calendar.</div><form onSubmit={save} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New session type name" /><input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ width: 42, height: 35 }} /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 10 }}><input className={inputStyle} value={p.name} onChange={e => update(p.id, 'name', e.target.value)} /><input type="color" value={p.color} onChange={e => update(p.id, 'color', e.target.value)} style={{ width: 42, height: 35 }} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div>)}</div></div>;
 }
 
 function PillarsPanel({ pillarTags, onChange, showToast }) {
@@ -2728,18 +2765,18 @@ function PillarsPanel({ pillarTags, onChange, showToast }) {
   const [name, setName] = useState('');
   const save = e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'ptag' + Date.now(), name: name.trim() }]); setName(''); showToast('Pillar added'); };
   const update = (id, value) => onChange(list.map(p => p.id === id ? { ...p, name: value } : p));
-  return <div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>Pillars are simple, non-color-coded tags that can be added to sessions. Add or remove pillars here.</div><form onSubmit={e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'ptag' + Date.now(), name: name.trim() }]); setName(''); showToast('Pillar added'); }} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New pillar name" /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.length === 0 && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No pillars yet.</div>}{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 10 }}><span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#1F4A3C', color: '#D5E0D5', fontWeight: 600 }}>{p.name}</span><input className={inputStyle} value={p.name} onChange={e => update(p.id, e.target.value)} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div>)}</div></div>;
+  return <div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>Pillars are simple, non-color-coded tags that can be added to sessions. Add or remove pillars here.</div><form onSubmit={e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'ptag' + Date.now(), name: name.trim() }]); setName(''); showToast('Pillar added'); }} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New pillar name" /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.length === 0 && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No pillars yet.</div>}{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 10 }}><span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{p.name}</span><input className={inputStyle} value={p.name} onChange={e => update(p.id, e.target.value)} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div>)}</div></div>;
 }
 
 function WorkModesPanel({ modes, onChange, showToast }) {
   const list = modes || [];
   const [name, setName] = useState('');
-  const save = e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'mode' + Date.now(), name: name.trim(), color: DEFAULT_MODE_COLORS[name.trim()] || '#9DB09D' }]); setName(''); showToast('Work mode added'); };
+  const save = e => { e.preventDefault(); if (!name.trim()) return; onChange([...list, { id: 'mode' + Date.now(), name: name.trim(), color: DEFAULT_MODE_COLORS[name.trim()] || '#A1A1AA' }]); setName(''); showToast('Work mode added'); };
   const update = (id, value) => onChange(list.map(p => p.id === id ? { ...p, name: value } : p));
-  return <div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>Add, edit, or remove work modes (e.g. Sync, Async, Coaching, Clinic, Break). Work modes are used for time tracking and appear without colors.</div><form onSubmit={save} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New work mode name" /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.length === 0 && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No work modes yet.</div>}{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 10 }}><span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#1F4A3C', color: '#D5E0D5', fontWeight: 600 }}>{p.name}</span><input className={inputStyle} value={p.name} onChange={e => update(p.id, e.target.value)} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div>)}</div></div>;
+  return <div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>Add, edit, or remove work modes (e.g. Sync, Async, Coaching, Clinic, Break). Work modes are used for time tracking and appear without colors.</div><form onSubmit={save} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 18, maxWidth: 560 }}><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="New work mode name" /><button type="submit" className={btnPrimary}><Plus size={14} /> Add</button></form><div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>{list.length === 0 && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No work modes yet.</div>}{list.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 10 }}><span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{p.name}</span><input className={inputStyle} value={p.name} onChange={e => update(p.id, e.target.value)} /><button onClick={() => onChange(list.filter(item => item.id !== p.id))} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div>)}</div></div>;
 }
 
-const linkBtn = { background: 'none', border: 'none', color: '#D65641', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0 };
+const linkBtn = { background: 'none', border: 'none', color: '#FAFAFA', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0 };
 
 function TimeSummary({ sessions, weeks, modes }) {
   const weekList = weeks || WEEKS;
@@ -2760,24 +2797,24 @@ function TimeSummary({ sessions, weeks, modes }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12, marginBottom: 24 }}>
         {modeNames.map(m => (
-          <div key={m} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}><Clock size={13} /><span style={{ fontSize: 12.5, color: '#D5E0D5', fontWeight: 600 }}>{m}</span></div>
+          <div key={m} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: '16px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}><Clock size={13} /><span style={{ fontSize: 12.5, color: '#FAFAFA', fontWeight: 600 }}>{m}</span></div>
             <div style={{ fontSize: 24, fontWeight: 700 }}>{fmtDur(byMode[m].total)}</div>
           </div>
         ))}
-        <div style={{ background: '#005B3F', borderRadius: 8, padding: '16px 18px', color: '#fff' }}>
+        <div style={{ background: '#18181B', borderRadius: 8, padding: '16px 18px', color: '#FAFAFA' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}><Clock size={13} /><span style={{ fontSize: 12.5, fontWeight: 600 }}>Total scheduled</span></div>
           <div style={{ fontSize: 24, fontWeight: 700 }}>{fmtDur(grandTotal)}</div>
         </div>
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', marginBottom: 24 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead><tr style={{ background: '#00402E' }}><th style={{ padding: '9px 12px', textAlign: 'left', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Mode</th>{weekList.map(w => <th key={w} style={{ padding: '9px 10px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>W{String(w).padStart(2, '0')}</th>)}<th style={{ padding: '9px 12px', color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Total</th></tr></thead>
+          <thead><tr style={{ background: '#1F1F23' }}><th style={{ padding: '9px 12px', textAlign: 'left', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Mode</th>{weekList.map(w => <th key={w} style={{ padding: '9px 10px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>W{String(w).padStart(2, '0')}</th>)}<th style={{ padding: '9px 12px', color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Total</th></tr></thead>
           <tbody>
             {modeNames.map(m => (
-              <tr key={m} style={{ borderBottom: '1px solid #1F4A3C' }}>
-                <td style={{ padding: '8px 12px', fontWeight: 600, color: '#D5E0D5' }}>{m}</td>
-                {weekList.map(w => <td key={w} style={{ padding: '8px 10px', textAlign: 'center', color: '#D5E0D5' }}>{fmtDur(byMode[m].byWeek[w] || 0)}</td>)}
+              <tr key={m} style={{ borderBottom: '1px solid #27272A' }}>
+                <td style={{ padding: '8px 12px', fontWeight: 600, color: '#FAFAFA' }}>{m}</td>
+                {weekList.map(w => <td key={w} style={{ padding: '8px 10px', textAlign: 'center', color: '#FAFAFA' }}>{fmtDur(byMode[m].byWeek[w] || 0)}</td>)}
                 <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>{fmtDur(byMode[m].total)}</td>
               </tr>
             ))}
@@ -2786,8 +2823,8 @@ function TimeSummary({ sessions, weeks, modes }) {
       </div>
       {unscheduled.length > 0 && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#D5E0D5' }}>Not yet scheduled ({unscheduled.length})</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{unscheduled.map(s => (<div key={s.id} style={{ fontSize: 12, padding: '6px 10px', background: '#003223', border: '1px dashed #2A5C4B', borderRadius: 6, color: '#D5E0D5' }}>{s.name}</div>))}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#FAFAFA' }}>Not yet scheduled ({unscheduled.length})</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{unscheduled.map(s => (<div key={s.id} style={{ fontSize: 12, padding: '6px 10px', background: '#18181B', border: '1px dashed #27272A', borderRadius: 6, color: '#FAFAFA' }}>{s.name}</div>))}</div>
         </div>
       )}
     </div>
@@ -2795,7 +2832,7 @@ function TimeSummary({ sessions, weeks, modes }) {
 }
 
 function Metric({ label, value }) {
-  return <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#D5E0D5' }}>{label}</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{value}</div></div>;
+  return <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#FAFAFA' }}>{label}</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{value}</div></div>;
 }
 
 function ExpandedAnalyticsPanel({ sessions, attendance, attempts, assessments, roster, afaGroups, onSeedDemo, onDeleteDemo }) {
@@ -2813,12 +2850,12 @@ function ExpandedAnalyticsPanel({ sessions, attendance, attempts, assessments, r
   }).filter(value => Number.isFinite(value));
   const average = scoreValues.length ? Math.round(scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length) : 0;
   const submission = roster.length ? Math.round(filteredAttempts.filter(attempt => attempt.status === 'submitted').length / Math.max(1, fellows.length) * 100) : 0;
-  return <div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><button onClick={() => setView('attendance')} className={view === 'attendance' ? btnPrimary : btnSecondary}>Attendance</button><button onClick={() => setView('assessment')} className={view === 'assessment' ? btnPrimary : btnSecondary}>Assessments</button><button onClick={onSeedDemo} className={btnGhost}>Create demo data</button><button onClick={onDeleteDemo} className={btnGhost + ' text-[#D0A023]'}>Delete demo data</button></div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}><select className={selectStyle} value={track} onChange={event => setTrack(event.target.value)}><option value="all">All tracks</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select><select className={selectStyle} value={city} onChange={event => setCity(event.target.value)}><option value="all">All placement cities</option>{[...new Set(roster.map(fellow => fellow.placementCity).filter(Boolean))].map(value => <option key={value} value={value}>{value}</option>)}</select><select className={selectStyle} value={afa} onChange={event => setAfa(event.target.value)}><option value="all">All Facilitator groups</option>{[...new Set([...(afaGroups || []), ...roster.map(fellow => fellow.afaGroup)].filter(Boolean))].map(value => <option key={value} value={value}>{value}</option>)}</select><span style={{ fontSize: 12.5, color: '#D5E0D5', alignSelf: 'center' }}>{fellows.length} Participants matched</span></div>{view === 'attendance' ? <><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><Metric label="Attendance records" value={filteredAttendance.length} /><Metric label="On-time" value={filteredAttendance.filter(entry => entry.status === 'on_time').length} /><Metric label="Attendance %" value={`${fellows.length ? Math.round(filteredAttendance.length / Math.max(1, fellows.length) * 100) : 0}%`} /></div><div style={{ marginTop: 24, fontWeight: 700 }}>Attendance by session</div><div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 180, maxWidth: 780, marginTop: 12, padding: '12px 8px', background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8 }}>{attendanceBySession.map(row => <div key={row.label} title={`${row.label}: ${row.value}`} style={{ flex: 1, minWidth: 18, height: `${Math.max(8, row.value / max * 100)}%`, background: '#D65641', borderRadius: '4px 4px 0 0' }} />)}</div><FellowAttendanceBreakdown sessions={sessions} attendance={filteredAttendance} fellows={fellows} roster={roster} /></> : <><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><Metric label="Submission %" value={`${submission}%`} /><Metric label="Average score %" value={`${average}%`} /><Metric label="Submitted attempts" value={filteredAttempts.filter(attempt => attempt.status === 'submitted').length} /></div><div style={{ marginTop: 24, fontWeight: 700 }}>Assessment score trend</div><div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 180, maxWidth: 780, marginTop: 12, padding: '12px 8px', background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8 }}>{assessments.map(assessment => { const values = filteredAttempts.filter(attempt => attempt.assessmentId === assessment.id).map(attempt => computeAttemptPercentage(attempt, assessment)); const value = values.length ? values.reduce((sum, item) => sum + item, 0) / values.length : 0; return <div key={assessment.id} title={`${assessment.title}: ${Math.round(value)}%`} style={{ flex: 1, minWidth: 18, height: `${Math.max(8, value)}%`, background: '#D97355', borderRadius: '4px 4px 0 0' }} /> })}</div><SessionAssessmentBreakdown fellows={fellows} sessions={sessions} assessments={assessments} attempts={filteredAttempts} roster={roster} /></>}</div>;
+  return <div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><button onClick={() => setView('attendance')} className={view === 'attendance' ? btnPrimary : btnSecondary}>Attendance</button><button onClick={() => setView('assessment')} className={view === 'assessment' ? btnPrimary : btnSecondary}>Assessments</button><button onClick={onSeedDemo} className={btnGhost}>Create demo data</button><button onClick={onDeleteDemo} className={btnGhost + ' text-[#E4E4E7]'}>Delete demo data</button></div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}><select className={selectStyle} value={track} onChange={event => setTrack(event.target.value)}><option value="all">All tracks</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select><select className={selectStyle} value={city} onChange={event => setCity(event.target.value)}><option value="all">All placement cities</option>{[...new Set(roster.map(fellow => fellow.placementCity).filter(Boolean))].map(value => <option key={value} value={value}>{value}</option>)}</select><select className={selectStyle} value={afa} onChange={event => setAfa(event.target.value)}><option value="all">All Facilitator groups</option>{[...new Set([...(afaGroups || []), ...roster.map(fellow => fellow.afaGroup)].filter(Boolean))].map(value => <option key={value} value={value}>{value}</option>)}</select><span style={{ fontSize: 12.5, color: '#FAFAFA', alignSelf: 'center' }}>{fellows.length} Participants matched</span></div>{view === 'attendance' ? <><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><Metric label="Attendance records" value={filteredAttendance.length} /><Metric label="On-time" value={filteredAttendance.filter(entry => entry.status === 'on_time').length} /><Metric label="Attendance %" value={`${fellows.length ? Math.round(filteredAttendance.length / Math.max(1, fellows.length) * 100) : 0}%`} /></div><div style={{ marginTop: 24, fontWeight: 700 }}>Attendance by session</div><div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 180, maxWidth: 780, marginTop: 12, padding: '12px 8px', background: '#18181B', border: '1px solid #27272A', borderRadius: 8 }}>{attendanceBySession.map(row => <div key={row.label} title={`${row.label}: ${row.value}`} style={{ flex: 1, minWidth: 18, height: `${Math.max(8, row.value / max * 100)}%`, background: '#FAFAFA', borderRadius: '4px 4px 0 0' }} />)}</div><FellowAttendanceBreakdown sessions={sessions} attendance={filteredAttendance} fellows={fellows} roster={roster} /></> : <><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><Metric label="Submission %" value={`${submission}%`} /><Metric label="Average score %" value={`${average}%`} /><Metric label="Submitted attempts" value={filteredAttempts.filter(attempt => attempt.status === 'submitted').length} /></div><div style={{ marginTop: 24, fontWeight: 700 }}>Assessment score trend</div><div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 180, maxWidth: 780, marginTop: 12, padding: '12px 8px', background: '#18181B', border: '1px solid #27272A', borderRadius: 8 }}>{assessments.map(assessment => { const values = filteredAttempts.filter(attempt => attempt.assessmentId === assessment.id).map(attempt => computeAttemptPercentage(attempt, assessment)); const value = values.length ? values.reduce((sum, item) => sum + item, 0) / values.length : 0; return <div key={assessment.id} title={`${assessment.title}: ${Math.round(value)}%`} style={{ flex: 1, minWidth: 18, height: `${Math.max(8, value)}%`, background: '#71717A', borderRadius: '4px 4px 0 0' }} /> })}</div><SessionAssessmentBreakdown fellows={fellows} sessions={sessions} assessments={assessments} attempts={filteredAttempts} roster={roster} /></>}</div>;
 }
 
 
 function FellowAttendanceBreakdown({ sessions, attendance, fellows, roster }) {
-  const statusColor = st => st === 'on_time' ? '#2D7A4F' : st === 'late' ? '#D0A023' : '#9DB09D';
+  const statusColor = st => st === 'on_time' ? '#D4D4D8' : st === 'late' ? '#E4E4E7' : '#A1A1AA';
   const statusLabel = st => st === 'on_time' ? 'On time' : st === 'late' ? 'Late' : 'No record';
   const hasRecords = sessions.some(session => (attendance || []).some(entry => String(entry.sessionId) === String(session.id)));
   return <div style={{ marginTop: 24 }}>
@@ -2830,12 +2867,12 @@ function FellowAttendanceBreakdown({ sessions, attendance, fellows, roster }) {
       const late = records.filter(entry => entry.status === 'late').length;
       const present = new Set(records.map(entry => String(entry.fellowId))).size;
       return (
-        <div key={session.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, marginBottom: 14, maxWidth: 960, overflowX: 'auto' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{session.name || 'Session'} <span style={{ fontWeight: 400, color: '#9DB09D', fontSize: 12 }}>{session.date ? '· ' + dateLabel(session.date) : '· unscheduled'}</span></div>
-          <div style={{ fontSize: 12, color: '#9DB09D', marginBottom: 10 }}>{present} fellow{present === 1 ? '' : 's'} attended · {onTime} on time · {late} late · {Math.max(0, fellows.length - present)} without record</div>
+        <div key={session.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, marginBottom: 14, maxWidth: 960, overflowX: 'auto' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{session.name || 'Session'} <span style={{ fontWeight: 400, color: '#A1A1AA', fontSize: 12 }}>{session.date ? '· ' + dateLabel(session.date) : '· unscheduled'}</span></div>
+          <div style={{ fontSize: 12, color: '#A1A1AA', marginBottom: 10 }}>{present} fellow{present === 1 ? '' : 's'} attended · {onTime} on time · {late} late · {Math.max(0, fellows.length - present)} without record</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: '#00402E', textAlign: 'left' }}>
+              <tr style={{ background: '#1F1F23', textAlign: 'left' }}>
                 <th style={{ padding: 8 }}>Participant</th>
                 <th style={{ padding: 8 }}>Status</th>
                 <th style={{ padding: 8 }}>Recorded at</th>
@@ -2846,20 +2883,20 @@ function FellowAttendanceBreakdown({ sessions, attendance, fellows, roster }) {
                 const entry = records.filter(r => String(r.fellowId) === String(f.id)).sort((x, y) => String(y.recordedAt || '').localeCompare(String(x.recordedAt || '')))[0];
                 const st = entry ? entry.status : null;
                 return (
-                  <tr key={f.id} style={{ borderTop: '1px solid #1F4A3C' }}>
+                  <tr key={f.id} style={{ borderTop: '1px solid #27272A' }}>
                     <td style={{ padding: 8, fontWeight: 600 }}>{f.name || friendlyFellowName({ fellowId: f.id }, roster)}</td>
                     <td style={{ padding: 8, color: statusColor(st), fontWeight: 600 }}>{statusLabel(st)}</td>
-                    <td style={{ padding: 8, color: '#D5E0D5' }}>{entry && entry.recordedAt ? new Date(entry.recordedAt).toLocaleString() : '--'}</td>
+                    <td style={{ padding: 8, color: '#FAFAFA' }}>{entry && entry.recordedAt ? new Date(entry.recordedAt).toLocaleString() : '--'}</td>
                   </tr>
                 );
               })}
-              {fellows.length === 0 && <tr><td colSpan={3} style={{ padding: 10, color: '#9DB09D' }}>No fellows match the current filters.</td></tr>}
+              {fellows.length === 0 && <tr><td colSpan={3} style={{ padding: 10, color: '#A1A1AA' }}>No fellows match the current filters.</td></tr>}
             </tbody>
           </table>
         </div>
       );
     })}
-    {!hasRecords && <div style={{ fontSize: 12.5, color: '#9DB09D', marginTop: 8 }}>No attendance records yet. Participants mark their own attendance when a Sync, Workshop, or Clinic session starts; check-ins will appear here fellow by fellow.</div>}
+    {!hasRecords && <div style={{ fontSize: 12.5, color: '#A1A1AA', marginTop: 8 }}>No attendance records yet. Participants mark their own attendance when a Sync, Workshop, or Clinic session starts; check-ins will appear here fellow by fellow.</div>}
   </div>;
 }
 
@@ -2872,7 +2909,7 @@ function SessionAssessmentBreakdown({ sessions, assessments, attempts, roster, f
     if (paras.some(q => { const rv = findReview(attempt, q.id); return rv && rv.status === 'ai_suggested'; })) return 'AI suggested';
     return 'Reviewed';
   };
-  const statusColor = s => s === 'Reviewed' ? '#2D7A4F' : s === 'Not submitted' ? '#9DB09D' : s === 'AI suggested' ? '#9A6A16' : '#D0A023';
+  const statusColor = s => s === 'Reviewed' ? '#D4D4D8' : s === 'Not submitted' ? '#A1A1AA' : s === 'AI suggested' ? '#A1A1AA' : '#E4E4E7';
   const questionCell = (attempt, question) => {
     if (!attempt) return '--';
     const points = Number(question.points) || 1;
@@ -2894,23 +2931,23 @@ function SessionAssessmentBreakdown({ sessions, assessments, attempts, roster, f
       if (!sessionAssessments.length) return null;
       return (
         <div key={session.id} style={{ marginBottom: 26 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 10 }}>{session.name || 'Session'} <span style={{ fontWeight: 400, color: '#9DB09D', fontSize: 12 }}>{session.date ? '· ' + dateLabel(session.date) : '· unscheduled'}</span></div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 10 }}>{session.name || 'Session'} <span style={{ fontWeight: 400, color: '#A1A1AA', fontSize: 12 }}>{session.date ? '· ' + dateLabel(session.date) : '· unscheduled'}</span></div>
           {sessionAssessments.map(assessment => {
             const assigned = new Set((assessment.assignmentGroups || []).flatMap(g => g.fellowIds || []).map(String));
             const assignedFellows = fellows.filter(f => assigned.has(String(f.id)));
             const list = assignedFellows.length ? assignedFellows : fellows;
             const paraCount = (assessment.questions || []).filter(q => q.type === 'paragraph').length;
             return (
-              <div key={assessment.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, marginBottom: 14, maxWidth: 960, overflowX: 'auto' }}>
+              <div key={assessment.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, marginBottom: 14, maxWidth: 960, overflowX: 'auto' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{assessment.title || 'Untitled assessment'}</div>
-                <div style={{ fontSize: 12, color: '#9DB09D', marginBottom: 10 }}>{list.length} fellow{list.length === 1 ? '' : 's'} · {(assessment.questions || []).length} question{(assessment.questions || []).length === 1 ? '' : 's'} · {paraCount} paragraph{paraCount === 1 ? '' : 's'}</div>
+                <div style={{ fontSize: 12, color: '#A1A1AA', marginBottom: 10 }}>{list.length} fellow{list.length === 1 ? '' : 's'} · {(assessment.questions || []).length} question{(assessment.questions || []).length === 1 ? '' : 's'} · {paraCount} paragraph{paraCount === 1 ? '' : 's'}</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                   <thead>
-                    <tr style={{ background: '#00402E', textAlign: 'left' }}>
+                    <tr style={{ background: '#1F1F23', textAlign: 'left' }}>
                       <th style={{ padding: 8 }}>Participant</th>
                       <th style={{ padding: 8 }}>Status</th>
                       <th style={{ padding: 8 }}>Total</th>
-                      {(assessment.questions || []).map(q => <th key={q.id} style={{ padding: 8 }} title={q.text}>{((q.text || 'Question').slice(0, 18))}{(q.text || '').length > 18 ? '…' : ''} <span style={{ fontWeight: 400, color: '#9DB09D' }}>({Number(q.points) || 1}p)</span></th>)}
+                      {(assessment.questions || []).map(q => <th key={q.id} style={{ padding: 8 }} title={q.text}>{((q.text || 'Question').slice(0, 18))}{(q.text || '').length > 18 ? '…' : ''} <span style={{ fontWeight: 400, color: '#A1A1AA' }}>({Number(q.points) || 1}p)</span></th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -2920,15 +2957,15 @@ function SessionAssessmentBreakdown({ sessions, assessments, attempts, roster, f
                       const pct = attempt && score.total ? Math.round(score.earned / score.total * 100) : null;
                       const st = statusOfAttempt(attempt, assessment);
                       return (
-                        <tr key={f.id} style={{ borderTop: '1px solid #1F4A3C' }}>
+                        <tr key={f.id} style={{ borderTop: '1px solid #27272A' }}>
                           <td style={{ padding: 8, fontWeight: 600 }}>{f.name}</td>
                           <td style={{ padding: 8, color: statusColor(st), fontWeight: 600 }}>{st}</td>
                           <td style={{ padding: 8, fontWeight: 700 }}>{pct == null ? '--' : `${pct}% (${score.earned}/${score.total})`}</td>
-                          {(assessment.questions || []).map(q => <td key={q.id} style={{ padding: 8, color: '#D5E0D5' }}>{questionCell(attempt, q)}</td>)}
+                          {(assessment.questions || []).map(q => <td key={q.id} style={{ padding: 8, color: '#FAFAFA' }}>{questionCell(attempt, q)}</td>)}
                         </tr>
                       );
                     })}
-                    {list.length === 0 && <tr><td colSpan={3 + ((assessment.questions || []).length)} style={{ padding: 10, color: '#9DB09D' }}>No fellows match the current filters.</td></tr>}
+                    {list.length === 0 && <tr><td colSpan={3 + ((assessment.questions || []).length)} style={{ padding: 10, color: '#A1A1AA' }}>No fellows match the current filters.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -3050,14 +3087,14 @@ function ParagraphReviewPanel({ attempts, assessments, roster, sessions, auth, o
     if ((draft && draft.aiSuggestion) || r.review?.status === 'ai_suggested') return 'suggested';
     return 'pending';
   };
-  return <div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>{showUngradedOnly ? 'Only responses still waiting for a staff grade are listed here. ' : ''}Review paragraph responses. AI suggestions are optional; only a staff member can publish a score.</div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><select className={selectStyle} value={assessmentFilter} onChange={event => setAssessmentFilter(event.target.value)}><option value="all">All assessments</option>{assessments.map(assessment => <option key={assessment.id} value={assessment.id}>{assessment.title || 'Untitled assessment'}</option>)}</select><select className={selectStyle} value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="pending">Pending review</option><option value="suggested">AI suggested</option><option value="reviewed">Reviewed</option></select><span style={{ fontSize: 12.5, color: '#D5E0D5', alignSelf: 'center' }}>{rows.length} response{rows.length === 1 ? '' : 's'}</span></div>{rows.map(r => { const draft = reportDraft(r) || { score: r.review?.score ?? '', feedback: r.review?.feedback ?? '', aiSuggestion: r.review?.aiSuggestion }; const status = statusOf(r); const max = Number(r.question.points) || 1; return <div key={draftKey(r.attempt.id, r.question.id)} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16, marginBottom: 12, maxWidth: 860 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}><div><b>{r.fellow?.name || r.attempt.fellowId}</b><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 3 }}>{r.assessment?.title || 'Assessment'} · {r.session?.name || 'Session unavailable'} · {max} points</div></div><span style={{ fontSize: 11.5, fontWeight: 700, color: status === 'reviewed' ? '#2D7A4F' : status === 'suggested' ? '#9A6A16' : '#D5E0D5' }}>{status === 'reviewed' ? 'Reviewed' : status === 'suggested' ? 'AI suggested' : 'Pending review'}</span></div><div style={{ fontWeight: 600, marginBottom: 6 }}>{r.question.text}</div>{r.question.rubric && <div style={{ fontSize: 12, color: '#D5E0D5', marginBottom: 6 }}>Rubric: {r.question.rubric}</div>}{r.question.expectedConcepts?.length > 0 && <div style={{ fontSize: 12, color: '#D5E0D5', marginBottom: 8 }}>Expected concepts: {r.question.expectedConcepts.join(', ')}</div>}<div style={{ whiteSpace: 'pre-wrap', background: '#00402E', borderRadius: 6, padding: 10, fontSize: 13, marginBottom: 10 }}>{r.answer}</div>{draft.aiSuggestion && <div style={{ fontSize: 12.5, background: '#FFF8E8', border: '1px solid #F0D9A0', borderRadius: 6, padding: 9, marginBottom: 10 }}>AI suggestion: {draft.aiSuggestion.suggestedScore}/{max} · confidence {Math.round((draft.aiSuggestion.confidence || 0) * 100)}%<br />{draft.aiSuggestion.feedback}</div>}<div style={{ display: 'flex', gap: 10, alignItems: 'end', flexWrap: 'wrap' }}><Field label={`Score (max ${max})`} style={{ width: 130, marginBottom: 0 }}><input type="number" min="0" max={max} step="0.5" className={inputStyle} value={draft.score} onChange={event => setDraft(r, { score: event.target.value, saved: false })} /></Field><Field label="Feedback" style={{ flex: '1 1 260px', marginBottom: 0 }}><textarea rows={2} className={inputStyle + ' resize-y'} value={draft.feedback} onChange={event => setDraft(r, { feedback: event.target.value, saved: false })} /></Field><button disabled={draft.fetching} onClick={() => askAI(r)} className={btnSecondary}>{draft.fetching ? 'Getting suggestion…' : 'Get AI suggestion'}</button><button onClick={() => saveRow(r)} className={btnPrimary}>Approve & save</button></div>{draft.aiError && <div style={{ fontSize: 12, color: '#D0A023', marginTop: 8 }}>{draft.aiError}</div>}</div> })}{rows.length === 0 && <div style={{ padding: '30px 0', color: '#9DB09D' }}>No paragraph responses match these filters.</div>}</div>;
+  return <div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>{showUngradedOnly ? 'Only responses still waiting for a staff grade are listed here. ' : ''}Review paragraph responses. AI suggestions are optional; only a staff member can publish a score.</div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><select className={selectStyle} value={assessmentFilter} onChange={event => setAssessmentFilter(event.target.value)}><option value="all">All assessments</option>{assessments.map(assessment => <option key={assessment.id} value={assessment.id}>{assessment.title || 'Untitled assessment'}</option>)}</select><select className={selectStyle} value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="pending">Pending review</option><option value="suggested">AI suggested</option><option value="reviewed">Reviewed</option></select><span style={{ fontSize: 12.5, color: '#FAFAFA', alignSelf: 'center' }}>{rows.length} response{rows.length === 1 ? '' : 's'}</span></div>{rows.map(r => { const draft = reportDraft(r) || { score: r.review?.score ?? '', feedback: r.review?.feedback ?? '', aiSuggestion: r.review?.aiSuggestion }; const status = statusOf(r); const max = Number(r.question.points) || 1; return <div key={draftKey(r.attempt.id, r.question.id)} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16, marginBottom: 12, maxWidth: 860 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}><div><b>{r.fellow?.name || r.attempt.fellowId}</b><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 3 }}>{r.assessment?.title || 'Assessment'} · {r.session?.name || 'Session unavailable'} · {max} points</div></div><span style={{ fontSize: 11.5, fontWeight: 700, color: status === 'reviewed' ? '#D4D4D8' : status === 'suggested' ? '#A1A1AA' : '#FAFAFA' }}>{status === 'reviewed' ? 'Reviewed' : status === 'suggested' ? 'AI suggested' : 'Pending review'}</span></div><div style={{ fontWeight: 600, marginBottom: 6 }}>{r.question.text}</div>{r.question.rubric && <div style={{ fontSize: 12, color: '#FAFAFA', marginBottom: 6 }}>Rubric: {r.question.rubric}</div>}{r.question.expectedConcepts?.length > 0 && <div style={{ fontSize: 12, color: '#FAFAFA', marginBottom: 8 }}>Expected concepts: {r.question.expectedConcepts.join(', ')}</div>}<div style={{ whiteSpace: 'pre-wrap', background: '#1F1F23', borderRadius: 6, padding: 10, fontSize: 13, marginBottom: 10 }}>{r.answer}</div>{draft.aiSuggestion && <div style={{ fontSize: 12.5, background: '#1F1F23', border: '1px solid #27272A', borderRadius: 6, padding: 9, marginBottom: 10 }}>AI suggestion: {draft.aiSuggestion.suggestedScore}/{max} · confidence {Math.round((draft.aiSuggestion.confidence || 0) * 100)}%<br />{draft.aiSuggestion.feedback}</div>}<div style={{ display: 'flex', gap: 10, alignItems: 'end', flexWrap: 'wrap' }}><Field label={`Score (max ${max})`} style={{ width: 130, marginBottom: 0 }}><input type="number" min="0" max={max} step="0.5" className={inputStyle} value={draft.score} onChange={event => setDraft(r, { score: event.target.value, saved: false })} /></Field><Field label="Feedback" style={{ flex: '1 1 260px', marginBottom: 0 }}><textarea rows={2} className={inputStyle + ' resize-y'} value={draft.feedback} onChange={event => setDraft(r, { feedback: event.target.value, saved: false })} /></Field><button disabled={draft.fetching} onClick={() => askAI(r)} className={btnSecondary}>{draft.fetching ? 'Getting suggestion…' : 'Get AI suggestion'}</button><button onClick={() => saveRow(r)} className={btnPrimary}>Approve & save</button></div>{draft.aiError && <div style={{ fontSize: 12, color: '#E4E4E7', marginTop: 8 }}>{draft.aiError}</div>}</div> })}{rows.length === 0 && <div style={{ padding: '30px 0', color: '#A1A1AA' }}>No paragraph responses match these filters.</div>}</div>;
 }
 
 function AnalyticsPanel({ sessions, attendance, attempts, onSeedDemo, onDeleteDemo }) {
   const onTime = attendance.filter(entry => entry.status === 'on_time').length;
   const late = attendance.filter(entry => entry.status === 'late').length;
   const completed = attempts.filter(attempt => attempt.status === 'submitted').length;
-  return <div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><button onClick={onSeedDemo} className={btnSecondary}>Create demo data</button><button onClick={onDeleteDemo} className={btnSecondary + ' text-[#D0A023]'}>Delete demo data</button></div><div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 16 }}>Attendance and assessment overview for Staff.</div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#D5E0D5' }}>On-time attendance</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{onTime}</div></div><div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#D5E0D5' }}>Late attendance</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{late}</div></div><div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#D5E0D5' }}>Completed assessments</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{completed}</div></div></div><div style={{ marginTop: 24, fontSize: 13, fontWeight: 700 }}>Session attendance</div><div style={{ marginTop: 8, background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', maxWidth: 780 }}><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr style={{ background: '#00402E', textAlign: 'left' }}><th style={{ padding: 9 }}>Session</th><th style={{ padding: 9 }}>On time</th><th style={{ padding: 9 }}>Late</th></tr></thead><tbody>{sessions.map(session => <tr key={session.id} style={{ borderTop: '1px solid #1F4A3C' }}><td style={{ padding: 9 }}>{session.name}</td><td style={{ padding: 9 }}>{attendance.filter(entry => entry.sessionId === session.id && entry.status === 'on_time').length}</td><td style={{ padding: 9 }}>{attendance.filter(entry => entry.sessionId === session.id && entry.status === 'late').length}</td></tr>)}</tbody></table></div></div>;
+  return <div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}><button onClick={onSeedDemo} className={btnSecondary}>Create demo data</button><button onClick={onDeleteDemo} className={btnSecondary + ' text-[#E4E4E7]'}>Delete demo data</button></div><div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 16 }}>Attendance and assessment overview for Staff.</div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, maxWidth: 780 }}><div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#FAFAFA' }}>On-time attendance</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{onTime}</div></div><div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#FAFAFA' }}>Late attendance</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{late}</div></div><div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: '#FAFAFA' }}>Completed assessments</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 5 }}>{completed}</div></div></div><div style={{ marginTop: 24, fontSize: 13, fontWeight: 700 }}>Session attendance</div><div style={{ marginTop: 8, background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', maxWidth: 780 }}><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}><th style={{ padding: 9 }}>Session</th><th style={{ padding: 9 }}>On time</th><th style={{ padding: 9 }}>Late</th></tr></thead><tbody>{sessions.map(session => <tr key={session.id} style={{ borderTop: '1px solid #27272A' }}><td style={{ padding: 9 }}>{session.name}</td><td style={{ padding: 9 }}>{attendance.filter(entry => entry.sessionId === session.id && entry.status === 'on_time').length}</td><td style={{ padding: 9 }}>{attendance.filter(entry => entry.sessionId === session.id && entry.status === 'late').length}</td></tr>)}</tbody></table></div></div>;
 }
 
 function ViewPanel({ session, auth, rooms, sessionTypes, pillarTags, modes, onAssign, onRequestUpdate, onClose, staff, onEdit, onDuplicate, onRemove, onDelete }) {
@@ -3074,33 +3111,33 @@ function ViewPanel({ session, auth, rooms, sessionTypes, pillarTags, modes, onAs
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,0.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 360, maxWidth: '92vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 360, maxWidth: '92vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.3 }}>{session.name}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9DB09D', flexShrink: 0 }}><X size={18} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', flexShrink: 0 }}><X size={18} /></button>
         </div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: color + '26', color: '#D5E0D5', fontWeight: 600 }}>{session.type}</span>
-          <span style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: '#1F4A3C', color: '#D5E0D5', fontWeight: 600 }}>{session.mode}</span>
-          {pillarTagNames.map(name => <span key={name} style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: '#1F4A3C', color: '#D5E0D5', fontWeight: 600 }}>{name}</span>)}
+          <span style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: '#1F1F23', color: '#FAFAFA', fontWeight: 600 }}>{session.type}</span>
+          <span style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{session.mode}</span>
+          {pillarTagNames.map(name => <span key={name} style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 12, background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{name}</span>)}
         </div>
         <DetailRow label="When">{session.date ? dateLabel(session.date) + ' · ' + session.weekday : 'Unscheduled'}</DetailRow>
         <DetailRow label="Time">{session.start ? session.start + '–' + session.end : '--'}</DetailRow>
         <DetailRow label="Facilitators">{fmtFacilitators(session.facilitators, rooms, staff) || '--'}</DetailRow>
         <DetailRow label="Session rooms">{getVisibleRooms(session, auth, [{ id: auth.fellowId, email: auth.email }], rooms).map(r => r.name + ' · ' + (r.facilitator || 'Facilitator not set')).join(', ') || '--'}</DetailRow>
         {auth.role !== 'fellow' && <button onClick={onAssign} className={btnSecondary + ' w-full justify-center mt-1'}>Assign rooms</button>}
-        {auth.role !== 'fellow' && onEdit && <button onClick={() => { onClose(); onEdit(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#9DB09D]'}><Edit size={12} /> Edit session</button>}
-        {auth.role !== 'fellow' && onDuplicate && <button onClick={() => { onClose(); onDuplicate(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#D0A023]'}><CopyIcon size={12} /> Duplicate session</button>}
-        {auth.role !== 'fellow' && onRemove && <button onClick={() => { if (!window.confirm('Remove this session from the calendar? It will move to the unscheduled list.')) return; onClose(); onRemove(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#D65641]'}><Trash2 size={12} /> Remove from calendar</button>}
-        {auth.role !== 'fellow' && onDelete && <button onClick={() => { if (!window.confirm('Delete this session?')) return; onClose(); onDelete(session.id); }} className={btnSecondary + ' text-[#D0A023] border-[#E3B8B8] w-full justify-center mt-1'}>Delete session</button>}
+        {auth.role !== 'fellow' && onEdit && <button onClick={() => { onClose(); onEdit(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#A1A1AA]'}><Edit size={12} /> Edit session</button>}
+        {auth.role !== 'fellow' && onDuplicate && <button onClick={() => { onClose(); onDuplicate(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#E4E4E7]'}><CopyIcon size={12} /> Duplicate session</button>}
+        {auth.role !== 'fellow' && onRemove && <button onClick={() => { if (!window.confirm('Remove this session from the calendar? It will move to the unscheduled list.')) return; onClose(); onRemove(session); }} className={btnGhost + ' w-full justify-center mt-1 text-[#FAFAFA]'}><Trash2 size={12} /> Remove from calendar</button>}
+        {auth.role !== 'fellow' && onDelete && <button onClick={() => { if (!window.confirm('Delete this session?')) return; onClose(); onDelete(session.id); }} className={btnSecondary + ' text-[#E4E4E7] border-[#52525B] w-full justify-center mt-1'}>Delete session</button>}
 
         {auth.role !== 'fellow' && session.resources && session.resources.length > 0 && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 8 }}>Resources</div>
+            <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 8 }}>Resources</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {session.resources.map(r => (
-                <a key={r.id} href={r.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid #2A5C4B', borderRadius: 6, fontSize: 12.5, color: '#D65641', textDecoration: 'none' }}>
+                <a key={r.id} href={r.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid #27272A', borderRadius: 6, fontSize: 12.5, color: '#FAFAFA', textDecoration: 'none' }}>
                   <LinkIcon size={13} /> <span style={{ fontWeight: 600 }}>{r.label}</span>
                 </a>
               ))}
@@ -3110,11 +3147,11 @@ function ViewPanel({ session, auth, rooms, sessionTypes, pillarTags, modes, onAs
 
         {auth.role !== 'fellow' && session.outcomes && session.outcomes.length > 0 && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 8 }}>Outcomes</div>
+            <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 8 }}>Outcomes</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {session.outcomes.map((outcome, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#D5E0D5', lineHeight: 1.4 }}>
-                  <span style={{ flexShrink: 0, color: '#D65641', fontWeight: 600 }}>{idx + 1}.</span>
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#FAFAFA', lineHeight: 1.4 }}>
+                  <span style={{ flexShrink: 0, color: '#FAFAFA', fontWeight: 600 }}>{idx + 1}.</span>
                   <span>{outcome}</span>
                 </div>
               ))}
@@ -3124,25 +3161,25 @@ function ViewPanel({ session, auth, rooms, sessionTypes, pillarTags, modes, onAs
 
         {auth.role !== 'fellow' && session.notes && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 6 }}>Planner notes</div>
-            <div style={{ fontSize: 12.5, color: '#D5E0D5', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{session.notes}</div>
+            <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 6 }}>Planner notes</div>
+            <div style={{ fontSize: 12.5, color: '#FAFAFA', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{session.notes}</div>
           </div>
         )}
         {auth.role === 'fellow' && session.fellowNotes && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 6 }}>Notes</div>
-            <div style={{ fontSize: 12.5, color: '#D5E0D5', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{session.fellowNotes}</div>
+            <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 6 }}>Notes</div>
+            <div style={{ fontSize: 12.5, color: '#FAFAFA', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{session.fellowNotes}</div>
           </div>
         )}
 
-        <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #1F4A3C' }}>
+        <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #27272A' }}>
           {!reqOpen ? (
             <button onClick={() => setReqOpen(true)} className={btnSecondary + ' w-full justify-center'}><MessageSquare size={14} /> Request an update</button>
           ) : sent ? (
-            <div style={{ fontSize: 12.5, color: '#D65641', textAlign: 'center', padding: '8px 0' }}>Request sent -- thanks!</div>
+            <div style={{ fontSize: 12.5, color: '#FAFAFA', textAlign: 'center', padding: '8px 0' }}>Request sent -- thanks!</div>
           ) : (
             <div>
-              <div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 6 }}>What needs updating?</div>
+              <div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 6 }}>What needs updating?</div>
               <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={3} placeholder="e.g. The exit ticket link is broken, or the time has changed…" className={inputStyle + ' resize-y'} />
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button onClick={submitRequest} className={btnPrimary + ' flex-1 justify-center'}><Send size={13} /> Send request</button>
@@ -3157,7 +3194,7 @@ function ViewPanel({ session, auth, rooms, sessionTypes, pillarTags, modes, onAs
 }
 
 function DetailRow({ label, children }) {
-  return (<div style={{ marginBottom: 12 }}><div style={{ fontSize: 11.5, color: '#9DB09D', marginBottom: 2 }}>{label}</div><div style={{ fontSize: 13.5, color: '#D5E0D5' }}>{children}</div></div>);
+  return (<div style={{ marginBottom: 12 }}><div style={{ fontSize: 11.5, color: '#A1A1AA', marginBottom: 2 }}>{label}</div><div style={{ fontSize: 13.5, color: '#FAFAFA' }}>{children}</div></div>);
 }
 
 function RosterPanel({ roster, staff, cityCodes, onChange, onAccount, showToast }) {
@@ -3198,16 +3235,16 @@ function RosterPanel({ roster, staff, cityCodes, onChange, onAccount, showToast 
 
   return (
     <div>
-      <div style={{ marginBottom: 6, fontSize: 13, color: '#D5E0D5' }}>Only emails on this list can sign in as a Participant.</div>
-      <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 18 }}>{roster.length} Participant{roster.length !== 1 ? 's' : ''} on the roster</div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18, marginBottom: 20, maxWidth: 520 }}>
+      <div style={{ marginBottom: 6, fontSize: 13, color: '#FAFAFA' }}>Only emails on this list can sign in as a Participant.</div>
+      <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 18 }}>{roster.length} Participant{roster.length !== 1 ? 's' : ''} on the roster</div>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18, marginBottom: 20, maxWidth: 520 }}>
         <form onSubmit={addOne} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Participant's full name" /></div>
-          <div style={{ flex: '1 1 220px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={email} onChange={e => setEmail(e.target.value)} placeholder={`firstname.lastname@${ORG_DOMAIN}`} /></div>
-          <div style={{ flex: '1 1 130px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Track</div><select className={inputStyle} value={track} onChange={e => setTrack(e.target.value)}><option value="">Track</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select></div><div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Grade</div><input className={inputStyle} value={grade} onChange={e => setGrade(e.target.value)} placeholder="Grade" /></div><div style={{ flex: '1 1 130px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Placement city</div><input className={inputStyle} value={placementCity} onChange={e => setPlacementCity(e.target.value)} placeholder="City" /></div><div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Facilitator group</div><select className={inputStyle} value={afaGroup} onChange={e => setAfaGroup(e.target.value)}><option value="">Assign an Facilitator…</option>{groupOptions.map(g => <option key={g} value={g}>{groupLabel(g)}</option>)}</select></div>
+          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Participant's full name" /></div>
+          <div style={{ flex: '1 1 220px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={email} onChange={e => setEmail(e.target.value)} placeholder={`firstname.lastname@${ORG_DOMAIN}`} /></div>
+          <div style={{ flex: '1 1 130px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Track</div><select className={inputStyle} value={track} onChange={e => setTrack(e.target.value)}><option value="">Track</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select></div><div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Grade</div><input className={inputStyle} value={grade} onChange={e => setGrade(e.target.value)} placeholder="Grade" /></div><div style={{ flex: '1 1 130px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Placement city</div><input className={inputStyle} value={placementCity} onChange={e => setPlacementCity(e.target.value)} placeholder="City" /></div><div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Facilitator group</div><select className={inputStyle} value={afaGroup} onChange={e => setAfaGroup(e.target.value)}><option value="">Assign an Facilitator…</option>{groupOptions.map(g => <option key={g} value={g}>{groupLabel(g)}</option>)}</select></div>
           <button type="submit" className={btnPrimary + ' h-[35px]'}><Plus size={14} /> Add</button>
         </form>
-        {error && <div style={{ color: '#D0A023', fontSize: 12, marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: '#E4E4E7', fontSize: 12, marginTop: 8 }}>{error}</div>}
         <button onClick={() => setBulkOpen(o => !o)} className={btnGhost + ' px-0 py-1 mt-3.5 text-[12.5px]'}>{bulkOpen ? 'Hide bulk import' : 'Bulk import (paste a list)'}</button>
         {bulkOpen && (
           <div style={{ marginTop: 10 }}>
@@ -3216,17 +3253,17 @@ function RosterPanel({ roster, staff, cityCodes, onChange, onAccount, showToast 
           </div>
         )}
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', maxWidth: 520 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', maxWidth: 520 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead><tr style={{ background: '#00402E', textAlign: 'left' }}><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Name</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Track / Grade</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>City / Facilitator</th><th style={{ padding: '9px 12px', borderBottom: '1px solid #2A5C4B' }}></th></tr></thead>
+          <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Name</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Track / Grade</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>City / Facilitator</th><th style={{ padding: '9px 12px', borderBottom: '1px solid #27272A' }}></th></tr></thead>
           <tbody>
             {sorted.map(r => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
-                <td style={{ padding: '8px 12px' }}>{r.name}<div style={{ fontSize: 11, color: '#9DB09D' }}>{r.email}</div></td><td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{r.track || '--'}{r.grade ? ' · ' + r.grade : ''}</td><td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{r.placementCity ? <>{(cityCodes || []).find(c => c.city.toLowerCase() === r.placementCity.toLowerCase()) && <span style={{ ...callSignChipStyle, marginRight: 6 }}>{(cityCodes || []).find(c => c.city.toLowerCase() === r.placementCity.toLowerCase()).code}</span>}{r.placementCity}</> : '--'}{r.afaGroup ? ' · ' + r.afaGroup : ''}</td>
-                <td style={{ padding: '8px 12px', textAlign: 'right' }}><button onClick={() => editOne(r)} style={linkBtn}>Edit</button><button onClick={() => removeOne(r.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', display: 'inline-flex', marginLeft: 10 }}><Trash2 size={14} /></button></td>
+              <tr key={r.id} style={{ borderBottom: '1px solid #27272A' }}>
+                <td style={{ padding: '8px 12px' }}>{r.name}<div style={{ fontSize: 11, color: '#A1A1AA' }}>{r.email}</div></td><td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{r.track || '--'}{r.grade ? ' · ' + r.grade : ''}</td><td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{r.placementCity ? <>{(cityCodes || []).find(c => c.city.toLowerCase() === r.placementCity.toLowerCase()) && <span style={{ ...callSignChipStyle, marginRight: 6 }}>{(cityCodes || []).find(c => c.city.toLowerCase() === r.placementCity.toLowerCase()).code}</span>}{r.placementCity}</> : '--'}{r.afaGroup ? ' · ' + r.afaGroup : ''}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'right' }}><button onClick={() => editOne(r)} style={linkBtn}>Edit</button><button onClick={() => removeOne(r.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', display: 'inline-flex', marginLeft: 10 }}><Trash2 size={14} /></button></td>
               </tr>
             ))}
-            {sorted.length === 0 && (<tr><td colSpan={4} style={{ padding: '20px 12px', textAlign: 'center', color: '#9DB09D' }}>No Participants added yet.</td></tr>)}
+            {sorted.length === 0 && (<tr><td colSpan={4} style={{ padding: '20px 12px', textAlign: 'center', color: '#A1A1AA' }}>No Participants added yet.</td></tr>)}
           </tbody>
         </table>
       </div>
@@ -3309,61 +3346,61 @@ function PlannerPanel({ planners, roles, onChange, onAccount, showToast }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 18, fontSize: 13, color: '#D5E0D5', maxWidth: 520 }}>
+      <div style={{ marginBottom: 18, fontSize: 13, color: '#FAFAFA', maxWidth: 520 }}>
         WA Staff manage the calendar, roster and assessments. Academy Participant Advisors (Facilitator) each carry a Group name that Participants and sessions are assigned to.
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: '12px 16px', marginBottom: 16, maxWidth: 520, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <ShieldCheck size={16} color="#D65641" />
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: '12px 16px', marginBottom: 16, maxWidth: 520, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <ShieldCheck size={16} color="#FAFAFA" />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600 }}>{SUPERADMIN_ACCOUNT.name} <span style={callSignChipStyle}>{callSignFromName(SUPERADMIN_ACCOUNT.name)}</span></div>
-          <div style={{ fontSize: 11.5, color: '#9DB09D' }}>Superadmin · built-in, can't be removed · can also be selected as a facilitator</div>
+          <div style={{ fontSize: 11.5, color: '#A1A1AA' }}>Superadmin · built-in, can't be removed · can also be selected as a facilitator</div>
         </div>
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18, marginBottom: 20, maxWidth: 560 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18, marginBottom: 20, maxWidth: 560 }}>
         <form onSubmit={addOne} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={name} onChange={e => { setName(e.target.value); if (!callSignTouched.current) setCallSign(callSignFromName(e.target.value)); }} placeholder="Staff full name" /></div>
-          <div style={{ flex: '1 1 220px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={email} onChange={e => setEmail(e.target.value)} placeholder={`name@${ORG_DOMAIN}`} /></div>
-          <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Role</div><select className={inputStyle} value={role} onChange={e => setRole(e.target.value)}>{(roles || DEFAULT_STAFF_ROLES).map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
-          <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Access</div><select className={inputStyle} value={access} onChange={e => setAccess(e.target.value)}>{STAFF_ACCESS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</select></div>
-          <div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={callSign} onChange={e => { setCallSign(e.target.value); callSignTouched.current = true; }} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
-          {AFA_ROLES.includes(role) && <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Facilitator group name</div><input className={inputStyle} value={group} onChange={e => setGroup(e.target.value)} placeholder="e.g. Facilitator Group 1" /></div>}
+          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={name} onChange={e => { setName(e.target.value); if (!callSignTouched.current) setCallSign(callSignFromName(e.target.value)); }} placeholder="Staff full name" /></div>
+          <div style={{ flex: '1 1 220px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={email} onChange={e => setEmail(e.target.value)} placeholder={`name@${ORG_DOMAIN}`} /></div>
+          <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Role</div><select className={inputStyle} value={role} onChange={e => setRole(e.target.value)}>{(roles || DEFAULT_STAFF_ROLES).map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
+          <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Access</div><select className={inputStyle} value={access} onChange={e => setAccess(e.target.value)}>{STAFF_ACCESS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</select></div>
+          <div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={callSign} onChange={e => { setCallSign(e.target.value); callSignTouched.current = true; }} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
+          {AFA_ROLES.includes(role) && <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Facilitator group name</div><input className={inputStyle} value={group} onChange={e => setGroup(e.target.value)} placeholder="e.g. Facilitator Group 1" /></div>}
           <button type="submit" className={btnPrimary + ' h-[35px]'}><Plus size={14} /> Add</button>
         </form>
-        {error && <div style={{ color: '#D0A023', fontSize: 12, marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: '#E4E4E7', fontSize: 12, marginTop: 8 }}>{error}</div>}
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, overflow: 'hidden', maxWidth: 560 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, overflow: 'hidden', maxWidth: 560 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead><tr style={{ background: '#00402E', textAlign: 'left' }}><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Name</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Call sign</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Role</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#D5E0D5', borderBottom: '1px solid #2A5C4B' }}>Access</th><th style={{ padding: '9px 12px', borderBottom: '1px solid #2A5C4B' }}></th></tr></thead>
+          <thead><tr style={{ background: '#1F1F23', textAlign: 'left' }}><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Name</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Call sign</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Role</th><th style={{ padding: '9px 12px', fontWeight: 600, color: '#FAFAFA', borderBottom: '1px solid #27272A' }}>Access</th><th style={{ padding: '9px 12px', borderBottom: '1px solid #27272A' }}></th></tr></thead>
           <tbody>
             {sorted.map(p => (
               editingStaff === p.id ? (
-                <tr key={p.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid #27272A' }}>
                   <td style={{ padding: '12px 12px', colSpan: 5 }}>
                     <form onSubmit={saveEdit} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                      <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={editName} onChange={e => { setEditName(e.target.value); setEditError(''); }} placeholder="Staff full name" /></div>
-                      <div style={{ flex: '1 1 180px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={editEmail} onChange={e => { setEditEmail(e.target.value); setEditError(''); }} placeholder={`name@${ORG_DOMAIN}`} /></div>
-                      <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Role</div><select className={inputStyle} value={editRole} onChange={e => setEditRole(e.target.value)}>{(roles || DEFAULT_STAFF_ROLES).map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
-                      <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Access</div><select className={inputStyle} value={editAccess} onChange={e => setEditAccess(e.target.value)}>{STAFF_ACCESS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</select></div>
-                      {AFA_ROLES.includes(editRole) && <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Facilitator group</div><input className={inputStyle} value={editGroup} onChange={e => { setEditGroup(e.target.value); setEditError(''); }} placeholder="e.g. Facilitator Group 1" /></div>}
-                      <div style={{ flex: '1 1 80px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={editCallSign} onChange={e => { setEditCallSign(e.target.value); setEditError(''); }} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
+                      <div style={{ flex: '1 1 150px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Name</div><input className={inputStyle} value={editName} onChange={e => { setEditName(e.target.value); setEditError(''); }} placeholder="Staff full name" /></div>
+                      <div style={{ flex: '1 1 180px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Email</div><input className={inputStyle} value={editEmail} onChange={e => { setEditEmail(e.target.value); setEditError(''); }} placeholder={`name@${ORG_DOMAIN}`} /></div>
+                      <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Role</div><select className={inputStyle} value={editRole} onChange={e => setEditRole(e.target.value)}>{(roles || DEFAULT_STAFF_ROLES).map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
+                      <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Access</div><select className={inputStyle} value={editAccess} onChange={e => setEditAccess(e.target.value)}>{STAFF_ACCESS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</select></div>
+                      {AFA_ROLES.includes(editRole) && <div style={{ flex: '1 1 140px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Facilitator group</div><input className={inputStyle} value={editGroup} onChange={e => { setEditGroup(e.target.value); setEditError(''); }} placeholder="e.g. Facilitator Group 1" /></div>}
+                      <div style={{ flex: '1 1 80px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={editCallSign} onChange={e => { setEditCallSign(e.target.value); setEditError(''); }} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button type="submit" className={btnPrimary}>Save</button>
                         <button type="button" onClick={cancelEdit} className={btnGhost}>Cancel</button>
                       </div>
                     </form>
-                    {editError && <div style={{ color: '#D0A023', fontSize: 12, marginTop: 8 }}>{editError}</div>}
+                    {editError && <div style={{ color: '#E4E4E7', fontSize: 12, marginTop: 8 }}>{editError}</div>}
                   </td>
                 </tr>
               ) : (
-                <tr key={p.id} style={{ borderBottom: '1px solid #1F4A3C' }}>
-                  <td style={{ padding: '8px 12px' }}>{p.name}<div style={{ fontSize: 11, color: '#9DB09D' }}>{p.email}</div></td>
+                <tr key={p.id} style={{ borderBottom: '1px solid #27272A' }}>
+                  <td style={{ padding: '8px 12px' }}>{p.name}<div style={{ fontSize: 11, color: '#A1A1AA' }}>{p.email}</div></td>
                   <td style={{ padding: '8px 12px' }}><span style={callSignChipStyle}>{p.callSign || callSignFromName(p.name)}</span></td>
-                  <td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{getRoleLabel(p.role, roles)}{p.group ? ' · ' + p.group : ''}</td><td style={{ padding: '8px 12px', color: '#D5E0D5' }}>{accessLabel(p.access)}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}><button onClick={() => editOne(p)} style={linkBtn}>Edit</button><button onClick={() => removeOne(p.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', display: 'inline-flex', marginLeft: 10 }}><Trash2 size={14} /></button></td>
+                  <td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{getRoleLabel(p.role, roles)}{p.group ? ' · ' + p.group : ''}</td><td style={{ padding: '8px 12px', color: '#FAFAFA' }}>{accessLabel(p.access)}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}><button onClick={() => editOne(p)} style={linkBtn}>Edit</button><button onClick={() => removeOne(p.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', display: 'inline-flex', marginLeft: 10 }}><Trash2 size={14} /></button></td>
                 </tr>
               )
             ))}
-            {sorted.length === 0 && (<tr><td colSpan={5} style={{ padding: '20px 12px', textAlign: 'center', color: '#9DB09D' }}>No additional WA Staff yet.</td></tr>)}
+            {sorted.length === 0 && (<tr><td colSpan={5} style={{ padding: '20px 12px', textAlign: 'center', color: '#A1A1AA' }}>No additional WA Staff yet.</td></tr>)}
           </tbody>
         </table>
       </div>
@@ -3371,7 +3408,7 @@ function PlannerPanel({ planners, roles, onChange, onAccount, showToast }) {
   );
 }
 
-const callSignChipStyle = { fontSize: 11, padding: '2px 7px', borderRadius: 10, background: '#1F4A3C', color: '#D5E0D5', fontWeight: 700, letterSpacing: 0.5 };
+const callSignChipStyle = { fontSize: 11, padding: '2px 7px', borderRadius: 10, background: '#27272A', color: '#FAFAFA', fontWeight: 700, letterSpacing: 0.5 };
 
 function RolesPanel({ roles, cityCodes, onRolesChange, onCityCodesChange, showToast }) {
   const roleList = roles || DEFAULT_STAFF_ROLES;
@@ -3402,8 +3439,8 @@ function RolesPanel({ roles, cityCodes, onRolesChange, onCityCodesChange, showTo
 
   return (
     <div>
-      <div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 20, maxWidth: 560 }}>Add, edit, or remove staff roles used on the WA Staff list, and assign call signs to placement cities (shown next to a Participant's city).</div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18, maxWidth: 560, marginBottom: 20 }}>
+      <div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 20, maxWidth: 560 }}>Add, edit, or remove staff roles used on the WA Staff list, and assign call signs to placement cities (shown next to a Participant's city).</div>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18, maxWidth: 560, marginBottom: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Staff roles</div>
         <form onSubmit={addRole} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 14 }}>
           <input className={inputStyle} value={newRole} onChange={e => setNewRole(e.target.value)} placeholder="New role name (e.g. Assessment Lead)" />
@@ -3411,28 +3448,28 @@ function RolesPanel({ roles, cityCodes, onRolesChange, onCityCodesChange, showTo
         </form>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {roleList.map(r => (
-            <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1px solid #1F4A3C', borderRadius: 6, padding: '8px 10px' }}>
+            <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1px solid #27272A', borderRadius: 6, padding: '8px 10px' }}>
               <input className={inputStyle} value={r.label} onChange={e => updateRole(r.id, e.target.value)} />
-              <button onClick={() => removeRole(r.id)} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button>
+              <button onClick={() => removeRole(r.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button>
             </div>
           ))}
         </div>
       </div>
-      <div style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 18, maxWidth: 560 }}>
+      <div style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 18, maxWidth: 560 }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Placement-city call signs</div>
         <form onSubmit={addCity} style={{ display: 'flex', gap: 8, alignItems: 'end', marginBottom: 14, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>City</div><input className={inputStyle} value={newCity} onChange={e => setNewCity(e.target.value)} placeholder="e.g. Dhaka" /></div>
-          <div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={newCityCode} onChange={e => setNewCityCode(e.target.value)} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
+          <div style={{ flex: '1 1 160px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>City</div><input className={inputStyle} value={newCity} onChange={e => setNewCity(e.target.value)} placeholder="e.g. Dhaka" /></div>
+          <div style={{ flex: '1 1 90px' }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>Call sign</div><input className={inputStyle} value={newCityCode} onChange={e => setNewCityCode(e.target.value)} placeholder="Auto" maxLength={4} style={{ textTransform: 'uppercase' }} /></div>
           <button type="submit" className={btnPrimary}><Plus size={14} /> Add</button>
         </form>
-        {(cityCodes || []).length === 0 && <div style={{ fontSize: 12.5, color: '#9DB09D' }}>No city call signs yet.</div>}
+        {(cityCodes || []).length === 0 && <div style={{ fontSize: 12.5, color: '#A1A1AA' }}>No city call signs yet.</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {(cityCodes || []).map(c => (
-            <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1px solid #1F4A3C', borderRadius: 6, padding: '8px 10px' }}>
+            <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1px solid #27272A', borderRadius: 6, padding: '8px 10px' }}>
               <span style={callSignChipStyle}>{c.code}</span>
               <input className={inputStyle} value={c.city} onChange={e => updateCity(c.id, 'city', e.target.value)} />
               <input className={inputStyle + ' w-[80px]!'} value={c.code} onChange={e => updateCity(c.id, 'code', e.target.value.toUpperCase())} maxLength={4} style={{ textTransform: 'uppercase' }} />
-              <button onClick={() => removeCity(c.id)} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button>
+              <button onClick={() => removeCity(c.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button>
             </div>
           ))}
         </div>
@@ -3445,24 +3482,24 @@ function RequestsPanel({ requests, roles, onResolve, onDelete }) {
   const sorted = requests.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return (
     <div>
-      <div style={{ fontSize: 12.5, color: '#9DB09D', marginBottom: 16 }}>{requests.filter(r => !r.resolved).length} open · {requests.length} total</div>
+      <div style={{ fontSize: 12.5, color: '#A1A1AA', marginBottom: 16 }}>{requests.filter(r => !r.resolved).length} open · {requests.length} total</div>
       {sorted.length === 0 ? (
-        <div style={{ padding: '40px 0', textAlign: 'center', color: '#9DB09D', fontSize: 14 }}>No update requests yet.</div>
+        <div style={{ padding: '40px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 14 }}>No update requests yet.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 640 }}>
           {sorted.map(r => (
-            <div key={r.id} style={{ background: '#003223', border: '1px solid ' + (r.resolved ? '#2A5C4B' : '#E0B98C'), borderRadius: 8, padding: 14, opacity: r.resolved ? 0.65 : 1 }}>
+            <div key={r.id} style={{ background: '#18181B', border: '1px solid ' + (r.resolved ? '#27272A' : '#3F3F46'), borderRadius: 8, padding: 14, opacity: r.resolved ? 0.65 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.sessionName}</div>
-                  <div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 2 }}>{r.requesterEmail} ({getRoleLabel(r.requesterRole, roles)}) · {fmtWhen(r.createdAt)}</div>
+                  <div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 2 }}>{r.requesterEmail} ({getRoleLabel(r.requesterRole, roles)}) · {fmtWhen(r.createdAt)}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button onClick={() => onResolve(r.id, !r.resolved)} className={btnGhost + ' text-[11.5px] px-2 py-1'}>{r.resolved ? 'Reopen' : 'Mark resolved'}</button>
-                  <button onClick={() => onDelete(r.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', display: 'flex' }}><Trash2 size={14} /></button>
+                  <button onClick={() => onDelete(r.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', display: 'flex' }}><Trash2 size={14} /></button>
                 </div>
               </div>
-              <div style={{ fontSize: 13, marginTop: 8, color: '#D5E0D5', lineHeight: 1.4 }}>{r.message}</div>
+              <div style={{ fontSize: 13, marginTop: 8, color: '#FAFAFA', lineHeight: 1.4 }}>{r.message}</div>
             </div>
           ))}
         </div>
@@ -3482,9 +3519,9 @@ function LocalAssessmentsPanel({ assessments, sessions, roster, rooms, onAssessm
   const removeAssessment = id => { onAssessmentsChange(assessments.filter(item => item.id !== id)); showToast('Assessment removed'); };
   return <div>
     <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}><button onClick={() => setEditing(newAssessment(sessions))} className={btnPrimary}><Plus size={14} /> Create assessment</button></div>
-    <div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 18 }}>Each assessment is linked to one session, but its questions and Participant assignments are managed independently.</div>
-    {assessments.map(assessment => <div key={assessment.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, maxWidth: 760, marginBottom: 10 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div style={{ fontWeight: 700 }}>{assessment.title || 'Untitled assessment'}</div><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{sessions.find(session => String(session.id) === String(assessment.sessionId))?.name || 'Session not found'} · {assessment.status} · Grades {isGradeReleased(assessment) ? 'released' : 'hidden'}</div><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{(assessment.questions || []).length} questions · {(assessment.assignmentGroups || []).length} assignment groups · {(assessment.assignmentGroups || []).reduce((count, group) => count + (group.fellowIds || []).length, 0)} Participants</div></div><div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button onClick={() => onToggleGradeRelease && onToggleGradeRelease(assessment)} style={linkBtn}>{isGradeReleased(assessment) ? 'Hide grades' : 'Release grades'}</button><button onClick={() => setEditing(assessment)} style={linkBtn}>Edit</button><button onClick={() => removeAssessment(assessment.id)} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div></div></div>)}
-    {assessments.length === 0 && <div style={{ padding: '30px 0', color: '#9DB09D' }}>No assessments created yet.</div>}
+    <div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 18 }}>Each assessment is linked to one session, but its questions and Participant assignments are managed independently.</div>
+    {assessments.map(assessment => <div key={assessment.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, maxWidth: 760, marginBottom: 10 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div style={{ fontWeight: 700 }}>{assessment.title || 'Untitled assessment'}</div><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{sessions.find(session => String(session.id) === String(assessment.sessionId))?.name || 'Session not found'} · {assessment.status} · Grades {isGradeReleased(assessment) ? 'released' : 'hidden'}</div><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{(assessment.questions || []).length} questions · {(assessment.assignmentGroups || []).length} assignment groups · {(assessment.assignmentGroups || []).reduce((count, group) => count + (group.fellowIds || []).length, 0)} Participants</div></div><div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button onClick={() => onToggleGradeRelease && onToggleGradeRelease(assessment)} style={linkBtn}>{isGradeReleased(assessment) ? 'Hide grades' : 'Release grades'}</button><button onClick={() => setEditing(assessment)} style={linkBtn}>Edit</button><button onClick={() => removeAssessment(assessment.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div></div></div>)}
+    {assessments.length === 0 && <div style={{ padding: '30px 0', color: '#A1A1AA' }}>No assessments created yet.</div>}
     {editing && <AssessmentOwnedEditor assessment={editing} sessions={sessions} roster={roster} rooms={rooms} onSave={saveAssessment} onClose={() => setEditing(null)} />}
   </div>;
 }
@@ -3502,9 +3539,9 @@ function AssessmentOwnedEditor({ assessment, sessions, roster, rooms, onSave, on
     if (form.questions.some(question => !question.text.trim() || (question.type === 'paragraph' ? false : !question.options.filter(Boolean).length || !question.correct.length))) { window.alert('Every choice question needs text, options, and at least one selected correct answer.'); return; }
     onSave({ ...form, questions: form.questions.map(question => normalizeQuestion(question, form.id)), updatedAt: new Date().toISOString() });
   };
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 120 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 560, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>{assessment.title ? 'Edit assessment' : 'Create assessment'}</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Title"><input className={inputStyle} value={form.title} onChange={event => set('title', event.target.value)} placeholder="Assessment title" /></Field><Field label="Session"><select className={inputStyle} value={form.sessionId} onChange={event => set('sessionId', event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name}</option>)}</select></Field><Field label="Description"><textarea className={inputStyle + ' resize-y'} rows={2} value={form.description || ''} onChange={event => set('description', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Starts" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.startsAt || ''} onChange={event => set('startsAt', event.target.value)} /></Field><Field label="Ends" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.endsAt || ''} onChange={event => set('endsAt', event.target.value)} /></Field></div><Field label="Status"><select className={inputStyle} value={form.status} onChange={event => set('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option><option value="closed">Closed</option></select></Field>
-    <div style={{ fontWeight: 700, fontSize: 13, margin: '18px 0 8px' }}>Questions in this assessment</div>{form.questions.map((question, index) => <div key={question.id} style={{ border: '1px solid #2A5C4B', borderRadius: 6, padding: 10, marginBottom: 7, display: 'flex', justifyContent: 'space-between', gap: 8 }}><div><b>{index + 1}. {question.text || 'Untitled question'}</b><div style={{ fontSize: 11.5, color: '#D5E0D5' }}>{question.type} · {question.correct.length} correct answer{question.correct.length === 1 ? '' : 's'}{question.targetGroupIds?.length ? ' · targeted' : ''}</div></div><div style={{ display: 'flex', gap: 8 }}><button onClick={() => setQuestionEditing(question)} style={linkBtn}>Edit</button><button onClick={() => removeQuestion(question.id)} style={{ ...linkBtn, color: '#D0A023' }}>Remove</button></div></div>)}<button onClick={() => setQuestionEditing(newQuestion(form.id))} className={btnSecondary}><Plus size={14} /> Add question</button>
-    <div style={{ fontWeight: 700, fontSize: 13, margin: '22px 0 8px' }}>Assignment groups</div>{form.assignmentGroups.map(group => <div key={group.id} style={{ border: '1px solid #2A5C4B', borderRadius: 6, padding: 10, marginBottom: 8 }}><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><select className={inputStyle + ' flex-[1_1_120px]'} value={group.track || ''} onChange={event => updateGroup(group.id, 'track', event.target.value)}><option value="">All tracks</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select><input className={inputStyle + ' flex-[1_1_120px]'} value={group.afaGroup || ''} onChange={event => updateGroup(group.id, 'afaGroup', event.target.value)} placeholder="Facilitator group (optional)" /><input className={inputStyle + ' flex-[1_1_120px]'} value={group.placementCity || ''} onChange={event => updateGroup(group.id, 'placementCity', event.target.value)} placeholder="Placement city (optional)" /></div><select multiple className={inputStyle + ' min-h-[64px] mt-[8px]'} value={group.roomIds || []} onChange={event => updateGroup(group.id, 'roomIds', Array.from(event.target.selectedOptions, option => option.value))}>{rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}</select><div style={{ fontSize: 11.5, color: '#D5E0D5', marginTop: 5 }}>{resolveAssignmentGroup(group, roster).length} Participants match this group</div></div>)}<button onClick={addGroup} className={btnGhost + ' px-1 py-0'}>+ Add assignment group</button><button onClick={save} className={btnPrimary + ' w-full justify-center mt-[20px]'}>Save assessment</button>{questionEditing && <OwnedQuestionEditor question={questionEditing} groups={form.assignmentGroups} onSave={saveQuestion} onClose={() => setQuestionEditing(null)} />}</div></div>;
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 120 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 560, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>{assessment.title ? 'Edit assessment' : 'Create assessment'}</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Title"><input className={inputStyle} value={form.title} onChange={event => set('title', event.target.value)} placeholder="Assessment title" /></Field><Field label="Session"><select className={inputStyle} value={form.sessionId} onChange={event => set('sessionId', event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name}</option>)}</select></Field><Field label="Description"><textarea className={inputStyle + ' resize-y'} rows={2} value={form.description || ''} onChange={event => set('description', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Starts" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.startsAt || ''} onChange={event => set('startsAt', event.target.value)} /></Field><Field label="Ends" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.endsAt || ''} onChange={event => set('endsAt', event.target.value)} /></Field></div><Field label="Status"><select className={inputStyle} value={form.status} onChange={event => set('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option><option value="closed">Closed</option></select></Field>
+    <div style={{ fontWeight: 700, fontSize: 13, margin: '18px 0 8px' }}>Questions in this assessment</div>{form.questions.map((question, index) => <div key={question.id} style={{ border: '1px solid #27272A', borderRadius: 6, padding: 10, marginBottom: 7, display: 'flex', justifyContent: 'space-between', gap: 8 }}><div><b>{index + 1}. {question.text || 'Untitled question'}</b><div style={{ fontSize: 11.5, color: '#FAFAFA' }}>{question.type} · {question.correct.length} correct answer{question.correct.length === 1 ? '' : 's'}{question.targetGroupIds?.length ? ' · targeted' : ''}</div></div><div style={{ display: 'flex', gap: 8 }}><button onClick={() => setQuestionEditing(question)} style={linkBtn}>Edit</button><button onClick={() => removeQuestion(question.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Remove</button></div></div>)}<button onClick={() => setQuestionEditing(newQuestion(form.id))} className={btnSecondary}><Plus size={14} /> Add question</button>
+    <div style={{ fontWeight: 700, fontSize: 13, margin: '22px 0 8px' }}>Assignment groups</div>{form.assignmentGroups.map(group => <div key={group.id} style={{ border: '1px solid #27272A', borderRadius: 6, padding: 10, marginBottom: 8 }}><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><select className={inputStyle + ' flex-[1_1_120px]'} value={group.track || ''} onChange={event => updateGroup(group.id, 'track', event.target.value)}><option value="">All tracks</option><option value="primary">Primary</option><option value="secondary">Secondary</option></select><input className={inputStyle + ' flex-[1_1_120px]'} value={group.afaGroup || ''} onChange={event => updateGroup(group.id, 'afaGroup', event.target.value)} placeholder="Facilitator group (optional)" /><input className={inputStyle + ' flex-[1_1_120px]'} value={group.placementCity || ''} onChange={event => updateGroup(group.id, 'placementCity', event.target.value)} placeholder="Placement city (optional)" /></div><select multiple className={inputStyle + ' min-h-[64px] mt-[8px]'} value={group.roomIds || []} onChange={event => updateGroup(group.id, 'roomIds', Array.from(event.target.selectedOptions, option => option.value))}>{rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}</select><div style={{ fontSize: 11.5, color: '#FAFAFA', marginTop: 5 }}>{resolveAssignmentGroup(group, roster).length} Participants match this group</div></div>)}<button onClick={addGroup} className={btnGhost + ' px-1 py-0'}>+ Add assignment group</button><button onClick={save} className={btnPrimary + ' w-full justify-center mt-[20px]'}>Save assessment</button>{questionEditing && <OwnedQuestionEditor question={questionEditing} groups={form.assignmentGroups} onSave={saveQuestion} onClose={() => setQuestionEditing(null)} />}</div></div>;
 }
 
 function OwnedQuestionEditor({ question, groups, onSave, onClose }) {
@@ -3520,7 +3557,7 @@ function OwnedQuestionEditor({ question, groups, onSave, onClose }) {
     if (form.type !== 'paragraph' && (options.length < 2 || !form.correct.some(answer => options.some(option => option.id === answer)))) { window.alert('Add at least two options and select the correct answer beside the option.'); return; }
     onSave({ ...form, options, correct: form.type === 'paragraph' ? [] : form.correct.filter(answer => options.some(option => option.id === answer)), imageUrl: normalizeImageUrl(form.imageUrl), gradingMode: form.type === 'paragraph' ? 'manual_review' : 'automatic', updatedAt: new Date().toISOString() });
   };
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 500, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.text || ''} onChange={event => set('text', event.target.value)} /></Field><Field label="Image URL"><input type="url" className={inputStyle} value={form.imageUrl || ''} onChange={event => set('imageUrl', event.target.value)} placeholder="Paste a public image or Google Drive link" /><div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 4 }}>Drive files must be shared as Anyone with the link, Viewer.</div>{form.imageUrl && <img src={normalizeImageUrl(form.imageUrl)} alt="Question preview" style={{ display: 'block', maxWidth: '100%', maxHeight: 180, objectFit: 'contain', marginTop: 8, border: '1px solid #2A5C4B' }} onError={event => { event.currentTarget.alt = 'Image could not be loaded'; }} />}</Field>{form.type === 'paragraph' ? <><Field label="Rubric"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.rubric || ''} onChange={event => set('rubric', event.target.value)} placeholder="What should staff look for when reviewing?" /></Field><Field label="Expected concepts"><input className={inputStyle} value={(form.expectedConcepts || []).join(', ')} onChange={event => set('expectedConcepts', event.target.value.split(',').map(item => item.trim()).filter(Boolean))} placeholder="Concept 1, Concept 2" /></Field></> : <Field label="Options and correct answers"><div style={{ fontSize: 11.5, color: '#9DB09D', marginBottom: 6 }}>Select the radio button or checkbox beside every correct option.</div><div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>{form.options.map((option, index) => <div key={option.id} style={{ display: 'flex', gap: 7, alignItems: 'center' }}><input type={form.type === 'single' ? 'radio' : 'checkbox'} name={`correct-${question.id}`} checked={form.correct.includes(option.id)} onChange={() => toggleCorrect(option.id)} aria-label={`Mark option ${index + 1} correct`} /><input className={inputStyle + ' flex-1'} value={option.text} onChange={event => updateOption(option.id, 'text', event.target.value)} placeholder={`Option ${index + 1}`} />{form.options.length > 2 && <button onClick={() => removeOption(option.id)} style={{ ...linkBtn, color: '#D0A023' }}>Remove</button>}</div>)}</div><button onClick={() => set('options', [...form.options, { id: `option-${question.id}-${Date.now()}`, text: '' }])} className={btnGhost + ' px-[5px] py-0'}>+ Add option</button></Field>}{groups?.length > 0 && <Field label="Optional question targets"><select multiple className={inputStyle + ' min-h-[64px]'} value={form.targetGroupIds} onChange={event => set('targetGroupIds', Array.from(event.target.selectedOptions, option => option.value))}>{groups.map((group, index) => <option key={group.id} value={group.id}>Group {index + 1} {group.track || 'all tracks'} {group.afaGroup || ''}</option>)}</select><div style={{ fontSize: 11.5, color: '#9DB09D', marginTop: 4 }}>Leave empty to assign this question to every assigned Participant.</div></Field>}<div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="1" className={inputStyle} value={form.points || 1} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit || 0} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><button onClick={save} className={btnPrimary + ' w-full justify-center'}>Save question</button></div></div>;
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 500, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.text || ''} onChange={event => set('text', event.target.value)} /></Field><Field label="Image URL"><input type="url" className={inputStyle} value={form.imageUrl || ''} onChange={event => set('imageUrl', event.target.value)} placeholder="Paste a public image or Google Drive link" /><div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 4 }}>Drive files must be shared as Anyone with the link, Viewer.</div>{form.imageUrl && <img src={normalizeImageUrl(form.imageUrl)} alt="Question preview" style={{ display: 'block', maxWidth: '100%', maxHeight: 180, objectFit: 'contain', marginTop: 8, border: '1px solid #27272A' }} onError={event => { event.currentTarget.alt = 'Image could not be loaded'; }} />}</Field>{form.type === 'paragraph' ? <><Field label="Rubric"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.rubric || ''} onChange={event => set('rubric', event.target.value)} placeholder="What should staff look for when reviewing?" /></Field><Field label="Expected concepts"><input className={inputStyle} value={(form.expectedConcepts || []).join(', ')} onChange={event => set('expectedConcepts', event.target.value.split(',').map(item => item.trim()).filter(Boolean))} placeholder="Concept 1, Concept 2" /></Field></> : <Field label="Options and correct answers"><div style={{ fontSize: 11.5, color: '#A1A1AA', marginBottom: 6 }}>Select the radio button or checkbox beside every correct option.</div><div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>{form.options.map((option, index) => <div key={option.id} style={{ display: 'flex', gap: 7, alignItems: 'center' }}><input type={form.type === 'single' ? 'radio' : 'checkbox'} name={`correct-${question.id}`} checked={form.correct.includes(option.id)} onChange={() => toggleCorrect(option.id)} aria-label={`Mark option ${index + 1} correct`} /><input className={inputStyle + ' flex-1'} value={option.text} onChange={event => updateOption(option.id, 'text', event.target.value)} placeholder={`Option ${index + 1}`} />{form.options.length > 2 && <button onClick={() => removeOption(option.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Remove</button>}</div>)}</div><button onClick={() => set('options', [...form.options, { id: `option-${question.id}-${Date.now()}`, text: '' }])} className={btnGhost + ' px-[5px] py-0'}>+ Add option</button></Field>}{groups?.length > 0 && <Field label="Optional question targets"><select multiple className={inputStyle + ' min-h-[64px]'} value={form.targetGroupIds} onChange={event => set('targetGroupIds', Array.from(event.target.selectedOptions, option => option.value))}>{groups.map((group, index) => <option key={group.id} value={group.id}>Group {index + 1} {group.track || 'all tracks'} {group.afaGroup || ''}</option>)}</select><div style={{ fontSize: 11.5, color: '#A1A1AA', marginTop: 4 }}>Leave empty to assign this question to every assigned Participant.</div></Field>}<div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="1" className={inputStyle} value={form.points || 1} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit || 0} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><button onClick={save} className={btnPrimary + ' w-full justify-center'}>Save question</button></div></div>;
 }
 
 function LegacyOwnedQuestionEditor({ question, groups, onSave, onClose }) {
@@ -3529,7 +3566,7 @@ function LegacyOwnedQuestionEditor({ question, groups, onSave, onClose }) {
   const updateOption = (index, value) => set('options', form.options.map((option, itemIndex) => itemIndex === index ? value : option));
   const toggleCorrect = option => set('correct', form.correct.includes(option) ? form.correct.filter(item => item !== option) : form.type === 'single' ? [option] : [...form.correct, option]);
   const save = () => { const options = form.options.map(option => option.trim()).filter(Boolean); if (!form.text.trim() || options.length < 2 || !form.correct.length) { window.alert('Add question text, at least two options, and select the correct answer.'); return; } onSave({ ...form, options, correct: form.correct.filter(option => options.includes(option)), updatedAt: new Date().toISOString() }); };
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.text} onChange={event => set('text', event.target.value)} /></Field><Field label="Options"><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{form.options.map((option, index) => <div key={index} style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type={form.type === 'single' ? 'radio' : 'checkbox'} checked={form.correct.includes(option) && Boolean(option)} onChange={() => toggleCorrect(option)} title="Correct answer" /><input className={inputStyle} value={option} onChange={event => updateOption(index, event.target.value)} placeholder={`Option ${index + 1}`} />{form.options.length > 2 && <button onClick={() => { const next = form.options.filter((_, itemIndex) => itemIndex !== index); set('options', next); set('correct', form.correct.filter(item => next.includes(item))); }} style={{ ...linkBtn, color: '#D0A023' }}>Remove</button>}</div>)}</div><button onClick={() => set('options', [...form.options, ''])} className={btnGhost + ' px-[5px] py-0'}>+ Add option</button></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="1" className={inputStyle} value={form.points} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit || 0} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><button onClick={save} className={btnPrimary + ' w-full justify-center'}>Save question</button></div></div>;
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.text} onChange={event => set('text', event.target.value)} /></Field><Field label="Options"><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{form.options.map((option, index) => <div key={index} style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type={form.type === 'single' ? 'radio' : 'checkbox'} checked={form.correct.includes(option) && Boolean(option)} onChange={() => toggleCorrect(option)} title="Correct answer" /><input className={inputStyle} value={option} onChange={event => updateOption(index, event.target.value)} placeholder={`Option ${index + 1}`} />{form.options.length > 2 && <button onClick={() => { const next = form.options.filter((_, itemIndex) => itemIndex !== index); set('options', next); set('correct', form.correct.filter(item => next.includes(item))); }} style={{ ...linkBtn, color: '#E4E4E7' }}>Remove</button>}</div>)}</div><button onClick={() => set('options', [...form.options, ''])} className={btnGhost + ' px-[5px] py-0'}>+ Add option</button></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="1" className={inputStyle} value={form.points} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit || 0} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><button onClick={save} className={btnPrimary + ' w-full justify-center'}>Save question</button></div></div>;
 }
 
 function AssessmentsPanel({ assessments, questions, sessions, roster, onAssessmentsChange, onQuestionsChange, showToast }) {
@@ -3547,11 +3584,11 @@ function AssessmentsPanel({ assessments, questions, sessions, roster, onAssessme
   const removeQuestion = id => { onQuestionsChange(questions.filter(item => item.id !== id)); showToast('Question removed'); };
   return <div>
     <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}><button onClick={() => setEditing(newAssessment(sessions))} className={btnPrimary}><Plus size={14} /> Create assessment</button><button onClick={() => setEditingQuestion(newQuestion())} className={btnSecondary}><Plus size={14} /> Add question</button></div>
-    <div style={{ fontSize: 13, color: '#D5E0D5', marginBottom: 18 }}>Assessments are linked to one session. Use Primary or Secondary assignment groups and set a Bangladesh-time response window.</div>
-    {assessments.map(assessment => <div key={assessment.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 14, maxWidth: 760, marginBottom: 10 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><div style={{ fontWeight: 700 }}>{assessment.title}</div><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{sessions.find(session => String(session.id) === String(assessment.sessionId))?.name || 'Session not found'} · {assessment.status} · {assessment.startsAt || 'No start'} to {assessment.endsAt || 'No end'}</div><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{(assessment.questionIds || []).length} questions · {(assessment.assignmentGroups || []).length} assignment groups</div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => setEditing(assessment)} style={linkBtn}>Edit</button><button onClick={() => removeAssessment(assessment.id)} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div></div></div>)}
-    {assessments.length === 0 && <div style={{ padding: '30px 0', color: '#9DB09D' }}>No assessments created yet.</div>}
+    <div style={{ fontSize: 13, color: '#FAFAFA', marginBottom: 18 }}>Assessments are linked to one session. Use Primary or Secondary assignment groups and set a Bangladesh-time response window.</div>
+    {assessments.map(assessment => <div key={assessment.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 14, maxWidth: 760, marginBottom: 10 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><div style={{ fontWeight: 700 }}>{assessment.title}</div><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{sessions.find(session => String(session.id) === String(assessment.sessionId))?.name || 'Session not found'} · {assessment.status} · {assessment.startsAt || 'No start'} to {assessment.endsAt || 'No end'}</div><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{(assessment.questionIds || []).length} questions · {(assessment.assignmentGroups || []).length} assignment groups</div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => setEditing(assessment)} style={linkBtn}>Edit</button><button onClick={() => removeAssessment(assessment.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div></div></div>)}
+    {assessments.length === 0 && <div style={{ padding: '30px 0', color: '#A1A1AA' }}>No assessments created yet.</div>}
     <div style={{ marginTop: 28, fontWeight: 700, marginBottom: 10 }}>Question bank</div>
-    {questions.map(question => <div key={question.id} style={{ background: '#003223', border: '1px solid #2A5C4B', borderRadius: 8, padding: 12, maxWidth: 760, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><b>{question.text || 'Untitled question'}</b><div style={{ fontSize: 12, color: '#D5E0D5', marginTop: 4 }}>{question.type} · {question.points} points{question.imageUrl ? ' · image' : ''}</div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => setEditingQuestion(question)} style={linkBtn}>Edit</button><button onClick={() => removeQuestion(question.id)} style={{ ...linkBtn, color: '#D0A023' }}>Delete</button></div></div>)}
+    {questions.map(question => <div key={question.id} style={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8, padding: 12, maxWidth: 760, marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><b>{question.text || 'Untitled question'}</b><div style={{ fontSize: 12, color: '#FAFAFA', marginTop: 4 }}>{question.type} · {question.points} points{question.imageUrl ? ' · image' : ''}</div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => setEditingQuestion(question)} style={linkBtn}>Edit</button><button onClick={() => removeQuestion(question.id)} style={{ ...linkBtn, color: '#E4E4E7' }}>Delete</button></div></div>)}
     {editing && <AssessmentEditor assessment={editing} sessions={sessions} roster={roster} questions={questions} onSave={saveAssessment} onClose={() => setEditing(null)} />}
     {editingQuestion && <QuestionEditor question={editingQuestion} onSave={saveQuestion} onClose={() => setEditingQuestion(null)} />}
   </div>;
@@ -3569,15 +3606,15 @@ function AssessmentEditor({ assessment, sessions, roster, questions, onSave, onC
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const addGroup = () => set('assignmentGroups', [...(form.assignmentGroups || []), { id: 'group' + Date.now(), track: 'secondary', fellowIds: [], questionIds: [] }]);
   const updateGroup = (id, key, value) => set('assignmentGroups', form.assignmentGroups.map(group => group.id === id ? { ...group, [key]: value } : group));
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 120 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>{assessment.title ? 'Edit assessment' : 'Create assessment'}</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Title"><input className={inputStyle} value={form.title} onChange={event => set('title', event.target.value)} placeholder="Exit ticket title" /></Field><Field label="Session"><select className={inputStyle} value={form.sessionId} onChange={event => set('sessionId', event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name}</option>)}</select></Field><Field label="Description"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.description} onChange={event => set('description', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Starts (Bangladesh time)" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.startsAt} onChange={event => set('startsAt', event.target.value)} /></Field><Field label="Ends (Bangladesh time)" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.endsAt} onChange={event => set('endsAt', event.target.value)} /></Field></div><Field label="Status"><select className={inputStyle} value={form.status} onChange={event => set('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option><option value="closed">Closed</option></select></Field><Field label="Questions"><select multiple className={inputStyle + ' min-h-[100px]'} value={form.questionIds} onChange={event => set('questionIds', Array.from(event.target.selectedOptions, option => option.value))}>{questions.map(question => <option key={question.id} value={question.id}>{question.text || 'Untitled question'}</option>)}</select></Field><Field label="Assignment groups"><div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{(form.assignmentGroups || []).map(group => <div key={group.id} style={{ border: '1px solid #2A5C4B', padding: 10, borderRadius: 6 }}><select className={inputStyle} value={group.track} onChange={event => updateGroup(group.id, 'track', event.target.value)}><option value="primary">Primary Participants</option><option value="secondary">Secondary Participants</option></select><select multiple className={inputStyle + ' min-h-[70px] mt-[8px]'} value={group.fellowIds} onChange={event => updateGroup(group.id, 'fellowIds', Array.from(event.target.selectedOptions, option => option.value))}>{roster.map(fellow => <option key={fellow.id} value={fellow.id}>{fellow.name} · {fellow.afaGroup || 'No Facilitator group'}</option>)}</select></div>)}</div><button onClick={addGroup} className={btnGhost + ' mt-[8px]'}>+ Add assignment group</button></Field><div style={{ display: 'flex', gap: 8, marginTop: 18 }}><button onClick={() => onSave({ ...form, updatedAt: new Date().toISOString() })} className={btnPrimary + ' flex-1 justify-center'}>Save assessment</button><button onClick={onClose} className={btnGhost}>Cancel</button></div></div></div>;
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 120 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>{assessment.title ? 'Edit assessment' : 'Create assessment'}</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Title"><input className={inputStyle} value={form.title} onChange={event => set('title', event.target.value)} placeholder="Exit ticket title" /></Field><Field label="Session"><select className={inputStyle} value={form.sessionId} onChange={event => set('sessionId', event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name}</option>)}</select></Field><Field label="Description"><textarea className={inputStyle + ' resize-y'} rows={3} value={form.description} onChange={event => set('description', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Starts (Bangladesh time)" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.startsAt} onChange={event => set('startsAt', event.target.value)} /></Field><Field label="Ends (Bangladesh time)" style={{ flex: 1 }}><input type="datetime-local" className={inputStyle} value={form.endsAt} onChange={event => set('endsAt', event.target.value)} /></Field></div><Field label="Status"><select className={inputStyle} value={form.status} onChange={event => set('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option><option value="closed">Closed</option></select></Field><Field label="Questions"><select multiple className={inputStyle + ' min-h-[100px]'} value={form.questionIds} onChange={event => set('questionIds', Array.from(event.target.selectedOptions, option => option.value))}>{questions.map(question => <option key={question.id} value={question.id}>{question.text || 'Untitled question'}</option>)}</select></Field><Field label="Assignment groups"><div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{(form.assignmentGroups || []).map(group => <div key={group.id} style={{ border: '1px solid #27272A', padding: 10, borderRadius: 6 }}><select className={inputStyle} value={group.track} onChange={event => updateGroup(group.id, 'track', event.target.value)}><option value="primary">Primary Participants</option><option value="secondary">Secondary Participants</option></select><select multiple className={inputStyle + ' min-h-[70px] mt-[8px]'} value={group.fellowIds} onChange={event => updateGroup(group.id, 'fellowIds', Array.from(event.target.selectedOptions, option => option.value))}>{roster.map(fellow => <option key={fellow.id} value={fellow.id}>{fellow.name} · {fellow.afaGroup || 'No Facilitator group'}</option>)}</select></div>)}</div><button onClick={addGroup} className={btnGhost + ' mt-[8px]'}>+ Add assignment group</button></Field><div style={{ display: 'flex', gap: 8, marginTop: 18 }}><button onClick={() => onSave({ ...form, updatedAt: new Date().toISOString() })} className={btnPrimary + ' flex-1 justify-center'}>Save assessment</button><button onClick={onClose} className={btnGhost}>Cancel</button></div></div></div>;
 }
 
 function QuestionEditor({ question, onSave, onClose }) {
   const [form, setForm] = useState({ ...question, options: [...(question.options || [''])], gridRows: [...(question.gridRows || [''])], gridCols: [...(question.gridCols || [''])], correct: [...(question.correct || [])] });
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const updateList = (key, index, value) => set(key, form[key].map((item, itemIndex) => itemIndex === index ? value : item));
-  const listEditor = (key, label) => <Field label={label}><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{form[key].map((item, index) => <div key={index} style={{ display: 'flex', gap: 6 }}><input className={inputStyle} value={item} onChange={event => updateList(key, index, event.target.value)} />{form[key].length > 1 && <button onClick={() => set(key, form[key].filter((_, itemIndex) => itemIndex !== index))} style={{ ...linkBtn, color: '#D0A023' }}>Remove</button>}</div>)}<button onClick={() => set(key, [...form[key], ''])} className={btnGhost + ' px-1 py-0'}>+ Add</button></div></Field>;
-  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={4} value={form.text} onChange={event => set('text', event.target.value)} /></Field>{['single', 'multiple', 'check'].includes(form.type) && listEditor('options', 'Options')}{['mcq_grid', 'checkbox_grid'].includes(form.type) && <>{listEditor('gridRows', 'Grid rows')}{listEditor('gridCols', 'Grid columns')}</>}<Field label="Correct answer JSON"><input className={inputStyle} value={Array.isArray(form.correct) ? JSON.stringify(form.correct) : form.correct} onChange={event => set('correct', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.points} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><Field label="Image URL (JPG, JPEG, or PNG)"><input type="url" className={inputStyle} value={form.imageUrl} onChange={event => set('imageUrl', event.target.value)} placeholder="https://..." /></Field><button onClick={() => onSave({ ...form, updatedAt: new Date().toISOString() })} className={btnPrimary + ' w-full justify-center mt-[10px]'}>Save question</button></div></div>;
+  const listEditor = (key, label) => <Field label={label}><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{form[key].map((item, index) => <div key={index} style={{ display: 'flex', gap: 6 }}><input className={inputStyle} value={item} onChange={event => updateList(key, index, event.target.value)} />{form[key].length > 1 && <button onClick={() => set(key, form[key].filter((_, itemIndex) => itemIndex !== index))} style={{ ...linkBtn, color: '#E4E4E7' }}>Remove</button>}</div>)}<button onClick={() => set(key, [...form[key], ''])} className={btnGhost + ' px-1 py-0'}>+ Add</button></div></Field>;
+  return <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 130 }} onClick={onClose}><div onClick={event => event.stopPropagation()} style={{ width: 460, maxWidth: '94vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}><b>Question editor</b><button onClick={onClose} style={{ background: 'none', border: 'none' }}><X size={18} /></button></div><Field label="Question type"><select className={inputStyle} value={form.type} onChange={event => set('type', event.target.value)}>{ASSESSMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></Field><Field label="Question text"><textarea className={inputStyle + ' resize-y'} rows={4} value={form.text} onChange={event => set('text', event.target.value)} /></Field>{['single', 'multiple', 'check'].includes(form.type) && listEditor('options', 'Options')}{['mcq_grid', 'checkbox_grid'].includes(form.type) && <>{listEditor('gridRows', 'Grid rows')}{listEditor('gridCols', 'Grid columns')}</>}<Field label="Correct answer JSON"><input className={inputStyle} value={Array.isArray(form.correct) ? JSON.stringify(form.correct) : form.correct} onChange={event => set('correct', event.target.value)} /></Field><div style={{ display: 'flex', gap: 10 }}><Field label="Points" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.points} onChange={event => set('points', Number(event.target.value))} /></Field><Field label="Time limit (minutes)" style={{ flex: 1 }}><input type="number" min="0" className={inputStyle} value={form.timeLimit} onChange={event => set('timeLimit', Number(event.target.value))} /></Field></div><Field label="Image URL (JPG, JPEG, or PNG)"><input type="url" className={inputStyle} value={form.imageUrl} onChange={event => set('imageUrl', event.target.value)} placeholder="https://..." /></Field><button onClick={() => onSave({ ...form, updatedAt: new Date().toISOString() })} className={btnPrimary + ' w-full justify-center mt-[10px]'}>Save question</button></div></div>;
 }
 
 function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessionTypes, pillarTags, modes, rooms, staff, weeks, startDate }) {
@@ -3623,16 +3660,16 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,39,51,0.4)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 400, maxWidth: '92vw', background: '#003223', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', justifyContent: 'flex-end', zIndex: 100 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 400, maxWidth: '92vw', background: '#18181B', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 24px rgba(0,0,0,.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{session.id ? 'Edit session' : 'New session'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9DB09D' }}><X size={18} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA' }}><X size={18} /></button>
         </div>
         <Field label="Session name"><input disabled={!canEditSchedule} className={inputStyle + (canEditSchedule ? '' : ' opacity-60')} value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Backward Planning Workshop" /></Field>
         <div style={{ display: 'flex', gap: 10, opacity: canEditSchedule ? 1 : 0.6 }}>
           <Field label="Date" style={{ flex: 1 }}><input disabled={!canEditSchedule} type="date" className={inputStyle} value={form.date || ''} onChange={e => set('date', e.target.value)} /></Field>
-          <Field label="Week (auto)" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#EEF0F2', color: '#003223', fontWeight: 600, lineHeight: '1.5' }}>{(form.date && startDate) ? 'Week ' + String(weekForDate(form.date, startDate)).padStart(2, '0') : ((form.week !== '' && form.week != null && form.week !== 0) ? 'Week ' + String(form.week).padStart(2, '0') : 'Assigned from date')}</div></Field>
+          <Field label="Week (auto)" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#27272A', color: '#FAFAFA', fontWeight: 600, lineHeight: '1.5' }}>{(form.date && startDate) ? 'Week ' + String(weekForDate(form.date, startDate)).padStart(2, '0') : ((form.week !== '' && form.week != null && form.week !== 0) ? 'Week ' + String(form.week).padStart(2, '0') : 'Assigned from date')}</div></Field>
         </div>
         <div style={{ display: 'flex', gap: 10, opacity: canEditSchedule ? 1 : 0.6 }}>
           <Field label="Start time" style={{ flex: 1 }}><input disabled={!canEditSchedule} type="time" className={inputStyle} value={form.start || ''} onChange={e => onEditStart(e.target.value)} /></Field>
@@ -3640,16 +3677,16 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
         </div>
         <div style={{ display: 'flex', gap: 10, opacity: canEditSchedule ? 1 : 0.6 }}>
           <Field label="Duration (min)" style={{ flex: 1 }}><select disabled={!canEditSchedule} className={inputStyle} value={editCustomMode || !DURATION_PRESETS.includes(Number(editDuration)) ? 'custom' : Number(editDuration)} onChange={e => onEditDurationPreset(e.target.value)}>{DURATION_PRESETS.map(d => <option key={d} value={d}>{d}m</option>)}<option value="custom">Custom…</option></select></Field>
-          <Field label="Duration display" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#EEF0F2', color: '#003223', fontWeight: 600 }}>{form.start ? fmtDur(editDuration) : '--'}</div></Field>
+          <Field label="Duration display" style={{ flex: 1 }}><div className={inputStyle} style={{ background: '#27272A', color: '#FAFAFA', fontWeight: 600 }}>{form.start ? fmtDur(editDuration) : '--'}</div></Field>
         </div>
         {(editCustomMode || !DURATION_PRESETS.includes(Number(editDuration))) && <Field label="Custom duration (minutes)"><input disabled={!canEditSchedule} type="number" min="1" max="1439" className={inputStyle} value={editDuration} onChange={e => onEditCustomDuration(e.target.value)} placeholder="e.g. 75" /></Field>}
         <Field label="Type of session"><select disabled={!canEditSchedule} className={inputStyle} value={form.type} onChange={e => set('type', e.target.value)}>{(sessionTypes || DEFAULT_SESSION_TYPES).map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}</select></Field>
-        <Field label="Pillars (tags)"><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(pillarTags || []).length === 0 && <span style={{ fontSize: 12, color: '#9DB09D' }}>No pillars defined yet -- add them under Pillars.</span>}{(pillarTags || []).map(p => { const on = (form.pillarIds || []).map(String).includes(String(p.id)); return <button type="button" key={p.id} onClick={() => set('pillarIds', on ? (form.pillarIds || []).filter(id => String(id) !== String(p.id)) : [...(form.pillarIds || []), p.id])} className={on ? btnPrimary : btnSecondary} style={{ fontSize: 12, padding: '4px 10px' }}>{p.name}</button>; })}</div></Field>
+        <Field label="Pillars (tags)"><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(pillarTags || []).length === 0 && <span style={{ fontSize: 12, color: '#A1A1AA' }}>No pillars defined yet -- add them under Pillars.</span>}{(pillarTags || []).map(p => { const on = (form.pillarIds || []).map(String).includes(String(p.id)); return <button type="button" key={p.id} onClick={() => set('pillarIds', on ? (form.pillarIds || []).filter(id => String(id) !== String(p.id)) : [...(form.pillarIds || []), p.id])} className={on ? btnPrimary : btnSecondary} style={{ fontSize: 12, padding: '4px 10px' }}>{p.name}</button>; })}</div></Field>
         <Field label="Work mode (for time tracking)"><select disabled={!canEditSchedule} className={inputStyle} value={form.mode} onChange={e => set('mode', e.target.value)}>{(modes || DEFAULT_MODES).map(m => <option key={m.id || m.name} value={m.name}>{m.name}</option>)}</select></Field>
         <Field label="Facilitators">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {form.facilitators.map(f => (
-              <div key={f.id} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #E5E9EC', borderRadius: 6, padding: 8 }}>
+              <div key={f.id} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #27272A', borderRadius: 6, padding: 8 }}>
                 {staffOptions().length > 0 ? (
                   <select disabled={!canEditSchedule} className={inputStyle + ' w-auto flex-1 min-w-[130px]'} value={f.staffName || ''} onChange={e => updateFacilitator(f.id, 'staffName', e.target.value)}>
                     <option value="">Facilitator name…</option>
@@ -3662,12 +3699,12 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
                   <option value="">Session room…</option>
                   {(rooms || []).map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
                 </select>
-                <button onClick={() => removeFacilitator(f.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
+                <button onClick={() => removeFacilitator(f.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
               </div>
             ))}
           </div>
           <button disabled={!canEditSchedule} onClick={addFacilitator} className={btnGhost + ' mt-2 px-1 py-1.5'}><Plus size={13} /> Add facilitator</button>
-          <div style={{ fontSize: 11, color: '#9DB09D', marginTop: 6 }}>Session rooms and Facilitator rooms are managed in the Rooms tab.</div>
+          <div style={{ fontSize: 11, color: '#A1A1AA', marginTop: 6 }}>Session rooms and Facilitator rooms are managed in the Rooms tab.</div>
         </Field>
         
 
@@ -3679,7 +3716,7 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
               <div key={r.id} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <select className={inputStyle + ' w-[120px]! shrink-0'} value={r.label} onChange={e => updateResource(r.id, 'label', e.target.value)}>{RESOURCE_KINDS.map(k => <option key={k} value={k}>{k}</option>)}</select>
                 <input className={inputStyle} placeholder="https://…" value={r.url} onChange={e => updateResource(r.id, 'url', e.target.value)} />
-                <button onClick={() => removeResource(r.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
+                <button onClick={() => removeResource(r.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
               </div>
             ))}
           </div>
@@ -3690,7 +3727,7 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
             {form.outcomes.map(o => (
               <div key={o.id} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input className={inputStyle} placeholder="Outcome" value={o.text} onChange={e => updateOutcome(o.id, e.target.value)} />
-                <button onClick={() => removeOutcome(o.id)} style={{ background: 'none', border: 'none', color: '#D0A023', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
+                <button onClick={() => removeOutcome(o.id)} style={{ background: 'none', border: 'none', color: '#E4E4E7', cursor: 'pointer', flexShrink: 0 }}><X size={15} /></button>
               </div>
             ))}
           </div>
@@ -3698,7 +3735,7 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
         </Field>
         <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
           <button onClick={handleSave} className={btnPrimary + ' flex-1 justify-center py-2.5'}>Save session</button>
-          {onDelete && <button onClick={() => { if (window.confirm('Delete this session?')) onDelete(session.id); }} className={btnSecondary + ' text-[#D0A023] border-[#E3B8B8]'}>Delete</button>}
+          {onDelete && <button onClick={() => { if (window.confirm('Delete this session?')) onDelete(session.id); }} className={btnSecondary + ' text-[#E4E4E7] border-[#52525B]'}>Delete</button>}
         </div>
       </div>
     </div>
@@ -3706,9 +3743,9 @@ function EditPanel({ session, onSave, onDelete, onClose, canEditSchedule, sessio
 }
 
 function Field({ label, children, style }) {
-  return (<div style={{ marginBottom: 14, ...style }}><div style={{ fontSize: 12, color: '#D5E0D5', fontWeight: 600, marginBottom: 5 }}>{label}</div>{children}</div>);
+  return (<div style={{ marginBottom: 14, ...style }}><div style={{ fontSize: 12, color: '#FAFAFA', fontWeight: 600, marginBottom: 5 }}>{label}</div>{children}</div>);
 }
-const inputStyle = 'w-full px-2.5 py-2 rounded-md border border-[#C9CDD2] text-[13px] bg-white text-[#252625] box-border';
+const inputStyle = 'w-full px-2.5 py-2 rounded-md border border-[#3F3F46] text-[13px] bg-[#18181B] text-[#FAFAFA] placeholder-[#71717A] box-border';
 
 // Test hook: lets tooling render every panel in isolation (harmless in the app bundle)
 export const __panels = { CalendarView, PlacementPanel, SessionsTable, AssignmentPanel, RoomsPanel, PillarsPanel, SessionTypesPanel, WorkModesPanel, RolesPanel, TimeSummary, ExpandedAnalyticsPanel, ParagraphReviewPanel, ViewPanel, RosterPanel, PlannerPanel, RequestsPanel, LocalAssessmentsPanel, EditPanel, Sidebar, TopBar, FilterBar, SessionAssessmentBreakdown, FellowAttendanceBreakdown, FellowOverview, AttendanceRecordsPanel, MyAttendancePanel, FellowAnalyticsPanel, FellowRecentAttempts, AcademyOverviewPanel, HistoricalAcademiesPanel, ReuseSessionsModal, normalizeHashTab, IncidentLogPanel, DeviceRequestPanel, StaffCalendar, StaffTaskEditor, computeAttemptScore, computeAttemptPercentage, weekForDate, attendancePhase, attendanceEligible, attemptGradeStatus, isGradeReleased, getDeviceFingerprint, layoutOverlapping, getTypeColor, getModeColor, isSessionVisibleToFellow, callSignFromName, getRoleLabel, endFromDuration, durationBetween };

@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel Demo &middot; Curriculum &amp; Training System</title>
+<meta name="description" content="Static demo of the admin panel of the Curriculum & Training System. Black & white aesthetic, demo data only." />
+<link rel="stylesheet" href="./demo.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="brand">Curriculum &amp; Training</div>
+      <div class="org">Demo Organization &middot; Admin Panel</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="viewTitle">Dashboard</h1>
+        <div class="sub" id="viewSub">Winter Academy 14 &middot; Week 1 of 8</div>
+      </div>
+      <div class="row">
+        <span class="tag dark">Demo data</span>
+        <div class="userchip">
+          <span>Ayesha Rahman</span>
+          <span class="role-tag">Lead</span>
+          <span class="avatar">AR</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="view active" id="v-dashboard">
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Sessions scheduled</div><div class="value">147</div><div class="delta">32 this week</div></div>
+          <div class="stat"><div class="label">Participants</div><div class="value">38</div><div class="delta">3 Facilitator groups</div></div>
+          <div class="stat"><div class="label">Attendance rate</div><div class="value">92%</div><div class="delta">On time 87% &middot; Late 5%</div></div>
+          <div class="stat"><div class="label">Open requests</div><div class="value">4</div><div class="delta">2 device &middot; 2 room changes</div></div>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <div class="between mb12"><h2 class="section-title" style="margin:0">This week at a glance</h2><span class="tag">Week 01</span></div>
+            <div class="list-row"><span>Daily Central Huddle</span><span class="muted small">Sun&ndash;Fri &middot; 08:30&ndash;09:00</span></div>
+            <div class="list-row"><span>Academic Content</span><span class="muted small">Mon &amp; Thu &middot; 09:00&ndash;10:30</span></div>
+            <div class="list-row"><span>Practice Teaching</span><span class="muted small">Mon &amp; Thu &middot; 14:00&ndash;15:30</span></div>
+            <div class="list-row"><span>Learning Circle</span><span class="muted small">Wed &middot; 15:45&ndash;16:45</span></div>
+            <div class="list-row"><span>Weekly Participant Briefing</span><span class="muted small">Sat &middot; 10:15&ndash;11:00</span></div>
+          </div>
+          <div class="card">
+            <h2 class="section-title">Time distribution by work mode</h2>
+            <div class="list-row"><span class="b">Sync</span><span class="muted small">62h 30m</span></div>
+            <div class="bar mb16"><span style="width:68%"></span></div>
+            <div class="list-row"><span class="b">Workshop</span><span class="muted small">24h 00m</span></div>
+            <div class="bar mb16"><span style="width:26%"></span></div>
+            <div class="list-row"><span class="b">Coaching</span><span class="muted small">9h 30m</span></div>
+            <div class="bar mb16"><span style="width:11%"></span></div>
+            <div class="list-row"><span class="b">Async</span><span class="muted small">6h 00m</span></div>
+            <div class="bar hollow"><span style="width:7%"></span></div>
+          </div>
+        </div>
+
+        <div class="card mt16">
+          <h2 class="section-title">Recent activity</h2>
+          <div class="list-row"><span>Attendance recorded for <b>Welcome to Academy (WA 14 Onboarding)</b></span><span class="muted small">11 minutes ago</span></div>
+          <div class="list-row"><span>Assessment <b>Week 1 Exit Ticket</b> published</span><span class="muted small">2 hours ago</span></div>
+          <div class="list-row"><span>Room <b>Room 204</b> assigned to Practice Teaching</span><span class="muted small">Yesterday</span></div>
+          <div class="list-row"><span>Device request approved for <b>Tanvir Ahmed</b></span><span class="muted small">Yesterday</span></div>
+          <div class="list-row"><span>Incident logged &mdash; projector failure in Room 101</span><span class="muted small">2 days ago</span></div>
+        </div>
+      </section>
+      <!-- ================= CALENDAR ================= -->
+      <section class="view" id="v-calendar">
+        <div class="filters">
+          <label>Week <select class="demo"><option>Week 01</option><option>Week 02</option><option>Week 03</option></select></label>
+          <label>Type <select class="demo"><option>All types</option><option>Team Culture</option><option>Academic Content</option><option>Practice Teaching</option></select></label>
+          <label>Pillars <select class="demo"><option>All pillars</option><option>Leadership</option><option>Equity &amp; Inclusion</option><option>Community &amp; Culture</option><option>Learning &amp; Growth</option></select></label>
+          <label>Mode <select class="demo"><option>All modes</option><option>Sync</option><option>Async</option><option>Coaching</option><option>Workshop</option></select></label>
+          <div class="row" style="margin-left:auto">
+            <button class="btn btn-secondary">Today</button>
+            <button class="btn btn-primary">+ Add session</button>
+          </div>
+        </div>
+
+        <div class="cal-wrap">
+          <div class="cal">
+            <div class="cal-gutter">
+              <div class="head"></div>
+              <div class="slot">08:00</div><div class="slot">09:00</div><div class="slot">10:00</div>
+              <div class="slot">11:00</div><div class="slot">12:00</div><div class="slot">13:00</div>
+              <div class="slot">14:00</div><div class="slot">15:00</div><div class="slot">16:00</div>
+              <div class="slot">17:00</div><div class="slot">18:00</div><div class="slot">19:00</div>
+              <div class="slot">20:00</div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Sunday<div class="d">25 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#FAFAFA;top:52px;height:78px"><div class="n">Welcome to Academy (WA 14 Onboarding)</div><div class="m">09:00&ndash;10:15 &middot; 1h 15m</div><div class="m">Room 101 &middot; Ayesha R.</div></div>
+                <div class="event" style="border-left-color:#D4D4D8;top:130px;height:52px"><div class="n">Introduction to Journaling</div><div class="m">10:30&ndash;11:30 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#27272A;top:260px;height:52px"><div class="n">Lunch &amp; Rest</div><div class="m">13:00&ndash;14:00 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#3F3F46;top:416px;height:78px"><div class="n">IT Skills 1 &ndash; Setup &amp; Onboarding</div><div class="m">16:00&ndash;17:30 &middot; 1h 30m</div></div>
+              </div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Monday<div class="d">26 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#D4D4D8;top:52px;height:78px"><div class="n">Academic Content &ndash; Literacy</div><div class="m">09:00&ndash;10:30 &middot; 1h 30m</div><div class="m">Room 101 &middot; Farhan K.</div></div>
+                <div class="event" style="border-left-color:#27272A;top:260px;height:52px"><div class="n">Meal / Break</div><div class="m">13:00&ndash;14:00 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#A1A1AA;top:312px;height:78px"><div class="n">Practice Teaching</div><div class="m">14:00&ndash;15:30 &middot; 1h 30m</div><div class="m">Room 204 &middot; Nusrat J.</div></div>
+              </div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Tuesday<div class="d">27 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#A1A1AA;top:52px;height:65px"><div class="n">System Inequity</div><div class="m">09:00&ndash;10:15 &middot; 1h 15m</div><div class="m">Room 102 &middot; Rezaul H.</div></div>
+                <div class="event" style="border-left-color:#52525B;top:416px;height:52px"><div class="n">Debrief</div><div class="m">16:00&ndash;17:00 &middot; 1h</div></div>
+              </div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Wednesday<div class="d">28 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#52525B;top:52px;height:78px"><div class="n">Teaching Skills &ndash; Classroom Mgmt</div><div class="m">09:00&ndash;10:30 &middot; 1h 30m</div></div>
+                <div class="event" style="border-left-color:#27272A;top:260px;height:52px"><div class="n">Meal / Break</div><div class="m">13:00&ndash;14:00 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#71717A;top:403px;height:52px"><div class="n">Learning Circle</div><div class="m">15:45&ndash;16:45 &middot; 1h</div></div>
+              </div>
+            </div>
+            <div class="cal-day">
+              <div class="head">Thursday<div class="d">29 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#D4D4D8;top:52px;height:78px"><div class="n">Academic Content &ndash; Numeracy</div><div class="m">09:00&ndash;10:30 &middot; 1h 30m</div><div class="m">Room 101 &middot; Farhan K.</div></div>
+                <div class="event" style="border-left-color:#27272A;top:260px;height:52px"><div class="n">Meal / Break</div><div class="m">13:00&ndash;14:00 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#A1A1AA;top:312px;height:78px"><div class="n">Practice Teaching</div><div class="m">14:00&ndash;15:30 &middot; 1h 30m</div><div class="m">Room 204 &middot; Nusrat J.</div></div>
+              </div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Friday<div class="d">30 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#D4D4D8;top:52px;height:52px"><div class="n">Personal &amp; Prof. Dev. &ndash; Wellbeing</div><div class="m">09:00&ndash;10:00 &middot; 1h</div></div>
+                <div class="event" style="border-left-color:#3F3F46;top:156px;height:52px"><div class="n">Team Support &ndash; Coaching</div><div class="m">11:00&ndash;12:00 &middot; 1h</div><div class="m">Room 102 &middot; Rezaul H.</div></div>
+                <div class="event" style="border-left-color:#52525B;top:468px;height:52px"><div class="n">Week Closing Circle</div><div class="m">17:00&ndash;18:00 &middot; 1h</div></div>
+              </div>
+            </div>
+
+            <div class="cal-day">
+              <div class="head">Saturday<div class="d">31 Oct</div></div>
+              <div class="cal-body">
+                <div class="event" style="border-left-color:#FAFAFA;top:26px;height:26px"><div class="n">Daily Central Huddle</div><div class="m">08:30&ndash;09:00 &middot; 30m</div></div>
+                <div class="event" style="border-left-color:#FAFAFA;top:117px;height:39px"><div class="n">Weekly Participant Briefing</div><div class="m">10:15&ndash;11:00 &middot; 45m</div><div class="m">Room 101 &middot; Ayesha R., Nusrat J.</div></div>
+                <div class="event" style="border-left-color:#71717A;top:416px;height:104px"><div class="n">Async Reflection &amp; Journal Upload</div><div class="m">16:00&ndash;18:00 &middot; 2h</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt16">
+          <h2 class="section-title">Legend &mdash; session types</h2>
+          <div class="grid g4">
+            <div class="legend-item"><span class="swatch" style="background:#FAFAFA"></span>Team Culture</div>
+            <div class="legend-item"><span class="swatch" style="background:#D4D4D8"></span>Personal &amp; Prof. Dev.</div>
+            <div class="legend-item"><span class="swatch" style="background:#3F3F46"></span>Team Support</div>
+            <div class="legend-item"><span class="swatch" style="background:#D4D4D8"></span>Academic Content</div>
+            <div class="legend-item"><span class="swatch" style="background:#71717A"></span>Learning Circle</div>
+            <div class="legend-item"><span class="swatch" style="background:#52525B"></span>Teaching Skills</div>
+            <div class="legend-item"><span class="swatch" style="background:#A1A1AA"></span>System Inequity</div>
+            <div class="legend-item"><span class="swatch" style="background:#27272A"></span>Meal / Break</div>
+            <div class="legend-item"><span class="swatch" style="background:#A1A1AA"></span>Practice Teaching</div>
+            <div class="legend-item"><span class="swatch" style="background:#52525B"></span>Debrief</div>
+          </div>
+        </div>
+      </section>
+<!-- ================= SESSIONS ================= -->
+      <section class="view" id="v-sessions">
+        <div class="between mb16">
+          <div class="row">
+            <button class="btn btn-secondary">Download Excel</button>
+            <button class="btn btn-secondary">Upload Excel</button>
+            <button class="btn btn-ghost">Unscheduled (3)</button>
+          </div>
+          <button class="btn btn-primary">+ New session</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Session</th><th>Week</th><th>Date</th><th>Time</th><th>Duration</th><th>Type</th><th>Mode</th><th>Pillar</th><th>Facilitators</th><th>Rooms</th><th>Resources</th><th>Attendance</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Welcome to Academy (WA 14 Onboarding)</td><td>01</td><td>Sun 25 Oct</td><td>09:00&ndash;10:15</td><td>1h 15m</td><td><span class="tag"><span class="swatch" style="background:#FAFAFA"></span>Team Culture</span></td><td>Sync</td><td>Community &amp; Culture</td><td>Nusrat J.</td><td>Room 101</td><td>2</td><td class="b">38/38</td></tr>
+              <tr><td class="b">Introduction to Journaling</td><td>01</td><td>Sun 25 Oct</td><td>10:30&ndash;11:30</td><td>1h</td><td><span class="tag"><span class="swatch" style="background:#D4D4D8"></span>Personal &amp; Prof. Dev.</span></td><td>Sync</td><td>Learning &amp; Growth</td><td>Ayesha R.</td><td>Room 101</td><td>1</td><td class="b">37/38</td></tr>
+              <tr><td class="b">Academic Content &ndash; Literacy</td><td>01</td><td>Mon 26 Oct</td><td>09:00&ndash;10:30</td><td>1h 30m</td><td><span class="tag"><span class="swatch" style="background:#D4D4D8"></span>Academic Content</span></td><td>Workshop</td><td>Learning &amp; Growth</td><td>Farhan K.</td><td>Room 101</td><td>4</td><td class="b">38/38</td></tr>
+              <tr><td class="b">Practice Teaching</td><td>01</td><td>Mon 26 Oct</td><td>14:00&ndash;15:30</td><td>1h 30m</td><td><span class="tag"><span class="swatch" style="background:#A1A1AA"></span>Practice Teaching</span></td><td>Workshop</td><td>Leadership</td><td>Nusrat J.</td><td>Room 204</td><td>3</td><td class="b">36/38</td></tr>
+              <tr><td class="b">System Inequity</td><td>01</td><td>Tue 27 Oct</td><td>09:00&ndash;10:15</td><td>1h 15m</td><td><span class="tag"><span class="swatch" style="background:#A1A1AA"></span>System Inequity</span></td><td>Sync</td><td>Equity &amp; Inclusion</td><td>Rezaul H.</td><td>Room 102</td><td>5</td><td class="b">35/38</td></tr>
+              <tr><td class="b">Teaching Skills &ndash; Classroom Mgmt</td><td>01</td><td>Wed 28 Oct</td><td>09:00&ndash;10:30</td><td>1h 30m</td><td><span class="tag"><span class="swatch" style="background:#52525B"></span>Teaching Skills</span></td><td>Workshop</td><td>Leadership</td><td>Nusrat J.</td><td>Room 101</td><td>3</td><td class="b">38/38</td></tr>
+              <tr><td class="b">Learning Circle</td><td>01</td><td>Wed 28 Oct</td><td>15:45&ndash;16:45</td><td>1h</td><td><span class="tag"><span class="swatch" style="background:#71717A"></span>Learning Circle</span></td><td>Async</td><td>Learning &amp; Growth</td><td>&mdash;</td><td>Room 204</td><td>1</td><td class="b">34/38</td></tr>
+              <tr><td class="b">Academic Content &ndash; Numeracy</td><td>01</td><td>Thu 29 Oct</td><td>09:00&ndash;10:30</td><td>1h 30m</td><td><span class="tag"><span class="swatch" style="background:#D4D4D8"></span>Academic Content</span></td><td>Workshop</td><td>Learning &amp; Growth</td><td>Farhan K.</td><td>Room 101</td><td>4</td><td class="b">37/38</td></tr>
+              <tr><td class="b">Personal &amp; Prof. Dev. &ndash; Wellbeing</td><td>01</td><td>Fri 30 Oct</td><td>09:00&ndash;10:00</td><td>1h</td><td><span class="tag"><span class="swatch" style="background:#D4D4D8"></span>Personal &amp; Prof. Dev.</span></td><td>Coaching</td><td>Learning &amp; Growth</td><td>Ayesha R.</td><td>Room 102</td><td>2</td><td class="b">33/38</td></tr>
+              <tr><td class="b">Team Support &ndash; Coaching</td><td>01</td><td>Fri 30 Oct</td><td>11:00&ndash;12:00</td><td>1h</td><td><span class="tag"><span class="swatch" style="background:#3F3F46"></span>Team Support</span></td><td>Coaching</td><td>Community &amp; Culture</td><td>Rezaul H.</td><td>Room 102</td><td>1</td><td class="b">32/38</td></tr>
+              <tr><td class="b">Weekly Participant Briefing</td><td>01</td><td>Sat 31 Oct</td><td>10:15&ndash;11:00</td><td>45m</td><td><span class="tag"><span class="swatch" style="background:#FAFAFA"></span>Team Culture</span></td><td>Sync</td><td>Community &amp; Culture</td><td>Ayesha R., Nusrat J.</td><td>Room 101</td><td>2</td><td class="b">&mdash;</td></tr>
+              <tr><td class="b">Debrief</td><td>01</td><td>Tue 27 Oct</td><td>16:00&ndash;17:00</td><td>1h</td><td><span class="tag"><span class="swatch" style="background:#52525B"></span>Debrief</span></td><td>Sync</td><td>Leadership</td><td>Farhan K.</td><td>Room 204</td><td>1</td><td class="b">36/38</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+<!-- ================= ATTENDANCE ================= -->
+      <section class="view" id="v-attendance">
+        <div class="filters">
+          <label>Session
+            <select class="demo"><option>Welcome to Academy</option><option>Academic Content &ndash; Literacy</option><option>Practice Teaching</option></select>
+          </label>
+          <label>Status
+            <select class="demo"><option>All statuses</option><option>On time</option><option>Late</option><option>Absent</option></select>
+          </label>
+          <label>Facilitator group
+            <select class="demo"><option>All Facilitator groups</option><option>DEMO Facilitator 1</option><option>DEMO Facilitator 2</option><option>DEMO Facilitator 3</option></select>
+          </label>
+        </div>
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Attendance records</div><div class="value">412</div></div>
+          <div class="stat"><div class="label">On time</div><div class="value">389</div></div>
+          <div class="stat"><div class="label">Late</div><div class="value">23</div></div>
+          <div class="stat"><div class="label">Attendance rate</div><div class="value">92%</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Participant</th><th>Facilitator group</th><th>Session</th><th>Date</th><th>Marked at</th><th>Status</th><th>Marked by</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Tanvir Ahmed</td><td>DEMO Facilitator 1</td><td>Welcome to Academy</td><td>Sun 25 Oct</td><td>08:56</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+              <tr><td class="b">Sadia Islam</td><td>DEMO Facilitator 1</td><td>Welcome to Academy</td><td>Sun 25 Oct</td><td>08:58</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+              <tr><td class="b">Rafiq Hasan</td><td>DEMO Facilitator 2</td><td>Welcome to Academy</td><td>Sun 25 Oct</td><td>09:12</td><td><span class="tag outline">Late</span></td><td class="muted">Nusrat J.</td></tr>
+              <tr><td class="b">Mehjabin Noor</td><td>DEMO Facilitator 2</td><td>Welcome to Academy</td><td>Sun 25 Oct</td><td>08:54</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+              <tr><td class="b">Imran Kabir</td><td>DEMO Facilitator 3</td><td>Academic Content &ndash; Literacy</td><td>Mon 26 Oct</td><td>08:59</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+              <tr><td class="b">Farzana Akter</td><td>DEMO Facilitator 3</td><td>Academic Content &ndash; Literacy</td><td>Mon 26 Oct</td><td>09:04</td><td><span class="tag outline">Late</span></td><td class="muted">Farhan K.</td></tr>
+              <tr><td class="b">Shakib Rahman</td><td>DEMO Facilitator 1</td><td>Practice Teaching</td><td>Mon 26 Oct</td><td>13:57</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+              <tr><td class="b">Nabila Chowdhury</td><td>DEMO Facilitator 2</td><td>Practice Teaching</td><td>Mon 26 Oct</td><td>&mdash;</td><td><span class="tag dark">Absent</span></td><td class="muted">&mdash;</td></tr>
+              <tr><td class="b">Arif Mahmud</td><td>DEMO Facilitator 3</td><td>System Inequity</td><td>Tue 27 Oct</td><td>08:55</td><td><span class="tag">On time</span></td><td class="muted">Device check-in</td></tr>
+            </tbody>
+          </table>
+        </div>
+            </section>
+
+      <!-- ================= PARTICIPANTS ROSTER ================= -->
+      <section class="view" id="v-participants">
+        <div class="filters">
+          <label>Track <select class="demo"><option>All tracks</option><option>Primary</option><option>Secondary</option></select></label>
+          <label>City <select class="demo"><option>All placement cities</option><option>Dhaka</option><option>Chattogram</option><option>Sylhet</option></select></label>
+          <label>Group <select class="demo"><option>All Facilitator groups</option><option>DEMO Facilitator 1</option><option>DEMO Facilitator 2</option><option>DEMO Facilitator 3</option></select></label>
+          <span class="muted small">38 Participants matched</span>
+          <button class="btn btn-primary" style="margin-left:auto">+ Add participant</button>
+        </div>
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Participants</div><div class="value">38</div></div>
+          <div class="stat"><div class="label">With call signs</div><div class="value">36</div></div>
+          <div class="stat"><div class="label">Primary track</div><div class="value">24</div></div>
+          <div class="stat"><div class="label">Secondary track</div><div class="value">14</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Call sign</th><th>Email</th><th>Facilitator group</th><th>Track</th><th>Grade</th><th>Placement city</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Tanvir Ahmed</td><td>TA</td><td class="muted">tanvir.ahmed@example.org</td><td>DEMO Facilitator 1</td><td>Primary</td><td>Grade 4</td><td>Dhaka</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Sadia Islam</td><td>SI</td><td class="muted">sadia.islam@example.org</td><td>DEMO Facilitator 1</td><td>Primary</td><td>Grade 3</td><td>Dhaka</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Rafiq Hasan</td><td>RH</td><td class="muted">rafiq.hasan@example.org</td><td>DEMO Facilitator 2</td><td>Secondary</td><td>Grade 9</td><td>Chattogram</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Mehjabin Noor</td><td>MN</td><td class="muted">mehjabin.noor@example.org</td><td>DEMO Facilitator 2</td><td>Primary</td><td>Grade 5</td><td>Dhaka</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Imran Kabir</td><td>IK</td><td class="muted">imran.kabir@example.org</td><td>DEMO Facilitator 3</td><td>Secondary</td><td>Grade 8</td><td>Sylhet</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Farzana Akter</td><td>FA</td><td class="muted">farzana.akter@example.org</td><td>DEMO Facilitator 3</td><td>Primary</td><td>Grade 4</td><td>Chattogram</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Shakib Rahman</td><td>SR</td><td class="muted">shakib.rahman@example.org</td><td>DEMO Facilitator 1</td><td>Secondary</td><td>Grade 10</td><td>Dhaka</td><td><span class="tag">Active</span></td></tr>
+              <tr><td class="b">Nabila Chowdhury</td><td>NC</td><td class="muted">nabila.chowdhury@example.org</td><td>DEMO Facilitator 2</td><td>Primary</td><td>Grade 2</td><td>Dhaka</td><td><span class="tag outline">At risk</span></td></tr>
+              <tr><td class="b">Arif Mahmud</td><td>AM</td><td class="muted">arif.mahmud@example.org</td><td>DEMO Facilitator 3</td><td>Secondary</td><td>Grade 9</td><td>Sylhet</td><td><span class="tag">Active</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+            </section>
+
+      <!-- ================= ROOMS ================= -->
+      <section class="view" id="v-rooms">
+        <div class="between mb16">
+          <span class="note">Rooms are assigned per session. A facilitator can be attached to each room booking.</span>
+          <button class="btn btn-primary">+ Add room</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Room</th><th>Capacity</th><th>Location</th><th>Sessions this week</th><th>Assigned facilitator</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Room 101</td><td>45</td><td>Main hall &middot; Floor 1</td><td>9</td><td>Nusrat J.</td><td><span class="tag">Available</span></td></tr>
+              <tr><td class="b">Room 102</td><td>30</td><td>Main hall &middot; Floor 1</td><td>5</td><td>Rezaul H.</td><td><span class="tag">Available</span></td></tr>
+              <tr><td class="b">Room 204</td><td>25</td><td>Annex &middot; Floor 2</td><td>4</td><td>Farhan K.</td><td><span class="tag outline">Maintenance</span></td></tr>
+              <tr><td class="b">Basecamp Lawn</td><td>60</td><td>Outdoor</td><td>2</td><td>&mdash;</td><td><span class="tag">Available</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= SESSION TYPES ================= -->
+      <section class="view" id="v-types">
+        <div class="card mb16">
+          <div class="between mb12"><h2 class="section-title" style="margin:0">Session types</h2><span class="muted small">Colors drive the calendar chips and time tracking</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#FAFAFA"></span><b>Team Culture</b></span><span class="muted small">18 sessions &middot; 14h 30m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#D4D4D8"></span><b>Personal &amp; Prof. Dev.</b></span><span class="muted small">14 sessions &middot; 12h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#3F3F46"></span><b>Team Support</b></span><span class="muted small">11 sessions &middot; 9h 30m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#D4D4D8"></span><b>Academic Content</b></span><span class="muted small">22 sessions &middot; 24h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#71717A"></span><b>Learning Circle</b></span><span class="muted small">8 sessions &middot; 6h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#52525B"></span><b>Teaching Skills</b></span><span class="muted small">16 sessions &middot; 18h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#A1A1AA"></span><b>System Inequity</b></span><span class="muted small">9 sessions &middot; 8h 15m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#27272A"></span><b>Meal / Break</b></span><span class="muted small">24 sessions &middot; 16h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#A1A1AA"></span><b>Practice Teaching</b></span><span class="muted small">12 sessions &middot; 15h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#52525B"></span><b>Debrief</b></span><span class="muted small">10 sessions &middot; 7h 30m</span></div>
+        </div>
+      </section>
+
+      <!-- ================= PILLARS ================= -->
+      <section class="view" id="v-pillars">
+        <div class="between mb16">
+          <span class="note">Pillars are non-color-coded tags that can be attached to any session for reporting.</span>
+          <button class="btn btn-primary">+ Add pillar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pillar</th><th>Sessions tagged</th><th>Total hours</th><th>Coverage</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Leadership</td><td>21</td><td>26h 45m</td><td><div class="bar"><span style="width:78%"></span></div></td></tr>
+              <tr><td class="b">Equity &amp; Inclusion</td><td>15</td><td>17h 30m</td><td><div class="bar"><span style="width:56%"></span></div></td></tr>
+              <tr><td class="b">Community &amp; Culture</td><td>19</td><td>21h 00m</td><td><div class="bar"><span style="width:68%"></span></div></td></tr>
+              <tr><td class="b">Learning &amp; Growth</td><td>25</td><td>32h 15m</td><td><div class="bar"><span style="width:92%"></span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= WORK MODES ================= -->
+      <section class="view" id="v-modes">
+        <div class="card">
+          <h2 class="section-title">Work modes</h2>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#3F3F46"></span><b>Sync</b></span><span class="muted small">62h 30m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#27272A"></span><b>Async</b></span><span class="muted small">6h 00m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#52525B"></span><b>Coaching</b></span><span class="muted small">9h 30m</span></div>
+          <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#71717A"></span><b>Workshop</b></span><span class="muted small">24h 00m</span></div>
+        </div>
+      </section>
+<!-- ================= VISION, GOALS & PILLARS ================= -->
+      <section class="view" id="v-overview">
+        <div class="card mb16">
+          <h2 class="section-title">Winter Academy 14 &mdash; Academy Vision</h2>
+          <p class="muted" style="margin:0;line-height:1.6">Every child in Bangladesh experiences an excellent education. We build a cohort of outstanding teachers who lead change from inside the classroom and beyond it.</p>
+        </div>
+        <div class="grid g2 mb16">
+          <div class="card">
+            <h2 class="section-title">Key Training Goals</h2>
+            <div class="list-row"><span><span class="muted">1.</span> Build instructional excellence through daily practice and feedback.</span></div>
+            <div class="list-row"><span><span class="muted">2.</span> Develop a shared language of leadership, equity and inclusion.</span></div>
+            <div class="list-row"><span><span class="muted">3.</span> Embed reflective practice through journaling and coaching.</span></div>
+            <div class="list-row"><span><span class="muted">4.</span> Prepare Participants for placement in high-need classrooms.</span></div>
+          </div>
+          <div class="card">
+            <h2 class="section-title">Structural Pillars</h2>
+            <div class="row mb12">
+              <span class="tag">Leadership</span>
+              <span class="tag">Equity &amp; Inclusion</span>
+              <span class="tag">Community &amp; Culture</span>
+              <span class="tag">Learning &amp; Growth</span>
+            </div>
+            <div class="note">Pillars are a separate, non-colour-coded tag that can be attached to any session on top of its session type.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Statement of Purpose</h2>
+          <div class="note">We exist so that the children who need the most get the most. Academy is the beginning of a lifetime of leadership, not the end of a training week.</div>
+        </div>
+      </section>
+
+      <!-- ================= LEGEND ================= -->
+      <section class="view" id="v-legend">
+        <div class="card mb16">
+          <h2 class="section-title">Session types</h2>
+          <div class="grid g3">
+            <span class="legend-item"><span class="swatch" style="background:#FAFAFA"></span> Team Culture</span>
+            <span class="legend-item"><span class="swatch" style="background:#D4D4D8"></span> Personal &amp; Prof. Dev.</span>
+            <span class="legend-item"><span class="swatch" style="background:#E4E4E7"></span> Team Support</span>
+            <span class="legend-item"><span class="swatch" style="background:#71717A"></span> Academic Content</span>
+            <span class="legend-item"><span class="swatch" style="background:#52525B"></span> Learning Circle</span>
+            <span class="legend-item"><span class="swatch" style="background:#3F3F46"></span> Teaching Skills</span>
+            <span class="legend-item"><span class="swatch" style="background:#A1A1AA"></span> System Inequity</span>
+            <span class="legend-item"><span class="swatch" style="background:#27272A"></span> Meal / Break</span>
+            <span class="legend-item"><span class="swatch" style="background:#D4D4D8"></span> Practice Teaching</span>
+            <span class="legend-item"><span class="swatch" style="background:#A1A1AA"></span> Debrief</span>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Work modes</h2>
+          <div class="grid g4">
+            <span class="legend-item"><span class="swatch" style="background:#3F3F46"></span> Sync</span>
+            <span class="legend-item"><span class="swatch" style="background:#27272A"></span> Async</span>
+            <span class="legend-item"><span class="swatch" style="background:#52525B"></span> Coaching</span>
+            <span class="legend-item"><span class="swatch" style="background:#71717A"></span> Workshop</span>
+          </div>
+          <hr class="hr" />
+          <div class="note">Colours are a monochrome ladder so the calendar stays readable in black and white. Each step is a different session type.</div>
+        </div>
+      </section>
+
+<!-- ================= ASSESSMENTS ================= -->
+      <section class="view" id="v-assessments">
+        <div class="between mb16">
+          <div class="row">
+            <select class="demo"><option>All sessions</option><option>Academic Content &ndash; Literacy</option><option>Teaching Skills</option></select>
+            <select class="demo"><option>All types</option><option>Single choice</option><option>Multiple choice</option><option>Checkbox grid</option><option>Paragraph</option></select>
+          </div>
+          <button class="btn btn-primary">+ New assessment</button>
+        </div>
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Assessments</div><div class="value">24</div></div>
+          <div class="stat"><div class="label">Responses</div><div class="value">612</div></div>
+          <div class="stat"><div class="label">Awaiting review</div><div class="value">17</div></div>
+          <div class="stat"><div class="label">Average score</div><div class="value">81%</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Assessment</th><th>Session</th><th>Type</th><th>Questions</th><th>Points</th><th>Attempts</th><th>Average</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Literacy content check</td><td class="muted">Academic Content &ndash; Literacy</td><td>Multiple choice</td><td>8</td><td>20</td><td>38</td><td class="b">84%</td><td><span class="tag">Released</span></td></tr>
+              <tr><td class="b">Classroom management scenarios</td><td class="muted">Teaching Skills &ndash; Classroom Mgmt</td><td>Single choice</td><td>6</td><td>15</td><td>38</td><td class="b">79%</td><td><span class="tag">Released</span></td></tr>
+              <tr><td class="b">Reflection journal &mdash; entry 1</td><td class="muted">Introduction to Journaling</td><td>Paragraph</td><td>3</td><td>30</td><td>17</td><td class="muted">&mdash;</td><td><span class="tag outline">Review pending</span></td></tr>
+              <tr><td class="b">System inequity concept map</td><td class="muted">System Inequity</td><td>Checkbox grid</td><td>4</td><td>10</td><td>35</td><td class="b">76%</td><td><span class="tag">Released</span></td></tr>
+              <tr><td class="b">Numeracy exit ticket</td><td class="muted">Academic Content &ndash; Numeracy</td><td>Single choice</td><td>5</td><td>10</td><td>37</td><td class="b">88%</td><td><span class="tag">Released</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= REVIEW ================= -->
+      <section class="view" id="v-review">
+        <div class="note mb16">Review paragraph responses. AI suggestions are optional; only a staff member can publish a score.</div>
+        <div class="filters">
+          <select class="demo"><option>All assessments</option><option>Reflection journal &mdash; entry 1</option></select>
+          <select class="demo"><option>All statuses</option><option>Pending review</option><option>AI suggested</option><option>Reviewed</option></select>
+          <span class="muted small">17 responses</span>
+        </div>
+        <div class="card" style="max-width:860px">
+          <div class="between mb12">
+            <div><b>Rafiq Hasan</b><div class="muted small" style="margin-top:3px">Reflection journal &mdash; entry 1 &middot; Introduction to Journaling &middot; 10 points</div></div>
+            <span class="tag outline">Pending review</span>
+          </div>
+          <div class="note mb12"><b>Response</b><div class="muted" style="margin-top:6px;line-height:1.6">The moment that stayed with me was watching a child correct their own work after I changed how I asked the question. It made me realise the problem was never the child, it was my framing.</div></div>
+          <div class="row mb12">
+            <label class="small muted">Score <input class="demo" style="width:64px;background:var(--bg-card);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:8px;padding:6px 8px;font-family:inherit" value="8" /></label>
+            <span class="muted small">/ 10</span>
+          </div>
+          <div class="mb12"><label class="small muted" style="display:block;margin-bottom:6px">Feedback</label><textarea class="demo" style="width:100%;min-height:74px;background:var(--bg-card);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:8px;padding:9px 10px;font-family:inherit;font-size:12.5px">Strong reflection. Next time, name the specific teaching move you changed and why.</textarea></div>
+          <div class="row">
+            <button class="btn btn-primary">Publish score</button>
+            <button class="btn btn-secondary">Save draft</button>
+            <button class="btn btn-ghost">Ask AI for suggestion</button>
+          </div>
+        </div>
+        <div class="card" style="max-width:860px">
+          <div class="between mb12">
+            <div><b>Sadia Islam</b><div class="muted small" style="margin-top:3px">Reflection journal &mdash; entry 1 &middot; Introduction to Journaling &middot; 10 points</div></div>
+            <span class="tag">Reviewed</span>
+          </div>
+          <div class="list-row"><span class="muted">Score</span><span class="b">9 / 10</span></div>
+          <div class="list-row"><span class="muted">Feedback</span><span>Excellent specificity &mdash; you connected the child outcome to your own move.</span></div>
+        </div>
+      </section>
+      <!-- ================= ANALYTICS ================= -->
+      <section class="view" id="v-analytics">
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Total sessions</div><div class="value">147</div></div>
+          <div class="stat"><div class="label">Total delivery hours</div><div class="value">102h</div></div>
+          <div class="stat"><div class="label">Attendance rate</div><div class="value">92%</div></div>
+          <div class="stat"><div class="label">Assessment average</div><div class="value">81%</div></div>
+        </div>
+        <div class="grid g2 mb16">
+          <div class="card">
+            <h2 class="section-title">Hours by session type</h2>
+            <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#FAFAFA"></span>Team Culture</span><span class="muted small">14h 30m</span></div>
+            <div class="bar mb12"><span style="width:100%"></span></div>
+            <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#D4D4D8"></span>Academic Content</span><span class="muted small">21h 00m</span></div>
+            <div class="bar mb12"><span style="width:82%"></span></div>
+            <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#A1A1AA"></span>Practice Teaching</span><span class="muted small">18h 00m</span></div>
+            <div class="bar mb12"><span style="width:71%"></span></div>
+            <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#71717A"></span>Learning Circle</span><span class="muted small">9h 00m</span></div>
+            <div class="bar mb12"><span style="width:40%"></span></div>
+            <div class="list-row"><span class="legend-item"><span class="swatch" style="background:#52525B"></span>Debrief</span><span class="muted small">7h 00m</span></div>
+            <div class="bar"><span style="width:31%"></span></div>
+          </div>
+          <div class="card">
+            <h2 class="section-title">Attendance by week</h2>
+            <div class="list-row"><span>Week 01</span><span class="muted small">92%</span></div>
+            <div class="bar mb12"><span style="width:92%"></span></div>
+            <div class="list-row"><span>Week 02</span><span class="muted small">94%</span></div>
+            <div class="bar mb12"><span style="width:94%"></span></div>
+            <div class="list-row"><span>Week 03</span><span class="muted small">89%</span></div>
+            <div class="bar mb12 hollow"><span style="width:89%"></span></div>
+            <div class="list-row"><span>Week 04</span><span class="muted small">91%</span></div>
+            <div class="bar hollow"><span style="width:91%"></span></div>
+            <hr class="hr" />
+            <div class="note">Weeks 03 and 04 are forecast from scheduled sessions only.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Facilitator group comparison</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Facilitator group</th><th>Participants</th><th>Attendance</th><th>Assessment avg</th><th>On-time submissions</th></tr></thead>
+              <tbody>
+                <tr><td class="b">DEMO Facilitator 1</td><td>13</td><td>94%</td><td>85%</td><td>91%</td></tr>
+                <tr><td class="b">DEMO Facilitator 2</td><td>13</td><td>91%</td><td>79%</td><td>86%</td></tr>
+                <tr><td class="b">DEMO Facilitator 3</td><td>12</td><td>90%</td><td>78%</td><td>83%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+<!-- ================= INCIDENTS ================= -->
+      <section class="view" id="v-incidents">
+        <div class="between mb16">
+          <div class="row">
+            <select class="demo"><option>All severities</option><option>Low</option><option>Medium</option><option>High</option></select>
+            <select class="demo"><option>All statuses</option><option>Open</option><option>Resolved</option></select>
+          </div>
+          <button class="btn btn-primary">+ Log incident</button>
+        </div>
+        <div class="card mb16">
+          <div class="between mb8"><div><b>Late arrival pattern &mdash; Rafiq Hasan</b><div class="muted small" style="margin-top:3px">Logged by Nusrat J. &middot; Thu 29 Oct &middot; Severity: Low</div></div><span class="tag outline">Open</span></div>
+          <div class="muted small" style="line-height:1.6">Three late arrivals in Week 1. The Facilitator has spoken with the Participant and family context was shared. Monitoring for one more week.</div>
+        </div>
+        <div class="card mb16">
+          <div class="between mb8"><div><b>Room 102 projector not working</b><div class="muted small" style="margin-top:3px">Logged by Farhan K. &middot; Tue 27 Oct &middot; Severity: Medium</div></div><span class="tag outline">Open</span></div>
+          <div class="muted small" style="line-height:1.6">Session moved to Room 101. Facilities informed; awaiting repair.</div>
+        </div>
+        <div class="card">
+          <div class="between mb8"><div><b>Confidential safeguarding referral</b><div class="muted small" style="margin-top:3px">Logged by Ayesha R. &middot; Mon 26 Oct &middot; Severity: High</div></div><span class="tag">Resolved</span></div>
+          <div class="muted small" style="line-height:1.6">Referral completed following Academy protocol. Details restricted to the safeguarding lead.</div>
+        </div>
+      </section>
+
+      <!-- ================= DEVICES ================= -->
+      <section class="view" id="v-devices">
+        <div class="grid g4 mb16">
+          <div class="stat"><div class="label">Device requests</div><div class="value">9</div></div>
+          <div class="stat"><div class="label">Approved</div><div class="value">6</div></div>
+          <div class="stat"><div class="label">Pending</div><div class="value">2</div></div>
+          <div class="stat"><div class="label">Declined</div><div class="value">1</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Participant</th><th>Device</th><th>Fingerprint</th><th>Requested</th><th>Status</th><th>Reviewed by</th></tr></thead>
+            <tbody>
+              <tr><td class="b">Tanvir Ahmed</td><td>Android tablet</td><td class="muted">a41f&hellip;9c02</td><td>Sun 25 Oct</td><td><span class="tag">Approved</span></td><td class="muted">Ayesha R.</td></tr>
+              <tr><td class="b">Mehjabin Noor</td><td>Windows laptop</td><td class="muted">7d3b&hellip;11ae</td><td>Sun 25 Oct</td><td><span class="tag">Approved</span></td><td class="muted">Ayesha R.</td></tr>
+              <tr><td class="b">Arif Mahmud</td><td>Android phone</td><td class="muted">c09e&hellip;4f77</td><td>Mon 26 Oct</td><td><span class="tag outline">Pending</span></td><td class="muted">&mdash;</td></tr>
+              <tr><td class="b">Nabila Chowdhury</td><td>iPad</td><td class="muted">1b55&hellip;8a10</td><td>Tue 27 Oct</td><td><span class="tag outline">Pending</span></td><td class="muted">&mdash;</td></tr>
+              <tr><td class="b">Shakib Rahman</td><td>Windows laptop</td><td class="muted">9f22&hellip;e3d4</td><td>Wed 28 Oct</td><td><span class="tag dark">Declined</span></td><td class="muted">Farhan K.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note mt16">Device fingerprints are approximate browser signals that can change or collide. They support staff review but cannot prove a physical device's identity.</div>
+      </section>
+      <section class="view" id="v-summary" data-title="Time Summary">
+        <div class="grid g3"><div class="stat"><div class="label">Scheduled this week</div><div class="value">38 hours</div></div><div class="stat"><div class="label">Facilitator time</div><div class="value">31 hours</div></div><div class="stat"><div class="label">Independent learning</div><div class="value">4 hours</div></div></div>
+        <div class="card mt16"><h2 class="section-title">Hours by learning area</h2><div class="list-row">Academic content <b>12h</b></div><div class="list-row">Teaching skills <b>10h</b></div><div class="list-row">Practice and debrief <b>8h</b></div><div class="list-row">Culture and wellbeing <b>8h</b></div></div>
+      </section>
+      <section class="view" id="v-requests" data-title="Requests">
+        <div class="card"><h2 class="section-title">Room change · Pending</h2><p>Nusrat Jahan requested Room 204 for Monday practice teaching: more space for group activities.</p><button class="btn btn-primary">Approve request</button></div>
+        <div class="card"><h2 class="section-title">Resource update · Completed</h2><p>Farhan Kabir shared the revised numeracy activity sheet for Thursday's workshop.</p></div>
+      </section>
+      <section class="view" id="v-archives" data-title="Historical Academies">
+        <div class="card"><h2 class="section-title">Summer Academy 2026</h2><p>Archived demonstration cohort · 96 sessions · 32 participants · 6 weeks.</p><button class="btn btn-secondary">Preview archived sessions</button> <button class="btn btn-primary">Reuse sessions</button></div>
+        <div class="card"><h2 class="section-title">Winter Academy 2025</h2><p>Archived demonstration cohort · 124 sessions · 36 participants · 8 weeks.</p></div>
+      </section>
+      <section class="view" id="v-staff" data-title="Staff Calendar">
+        <div class="card"><h2 class="section-title">Week 01 · Staff tasks</h2><div class="list-row"><b>Facilitator debrief</b><span>Mon 26 Oct · 17:00–18:00 · Ayesha R.</span></div><div class="list-row"><b>Room booking review</b><span>Tue 27 Oct · 11:00–11:45 · Farhan K.</span></div><div class="list-row"><b>Assessment quality check</b><span>Wed 28 Oct · 14:00–15:30 · Nusrat J.</span></div><div class="list-row"><b>Weekly report</b><span>Sat 31 Oct · 12:00–13:00 · Ayesha R.</span></div></div>
+        <div class="card"><h2 class="section-title">Unscheduled</h2><p>Confirm Week 3 guest facilitator · Rezaul H.</p><button class="btn btn-primary">Add staff task</button></div>
+      </section>
+      <section class="view" id="v-staffadmin" data-title="Staff Management">
+        <div class="note mb16">Built-in Superadmin view. Lead and Coordinator do not manage staff accounts or role definitions.</div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Group</th></tr></thead><tbody><tr><td>Ayesha Rahman</td><td>ayesha@example.org</td><td>Lead</td><td>All</td></tr><tr><td>Farhan Kabir</td><td>farhan@example.org</td><td>Coordinator</td><td>All</td></tr><tr><td>Nusrat Jahan</td><td>nusrat@example.org</td><td>Facilitator</td><td>Group 1</td></tr><tr><td>Rezaul Haque</td><td>rezaul@example.org</td><td>Facilitator</td><td>Group 2</td></tr></tbody></table></div>
+      </section>
+      <section class="view" id="v-roles" data-title="Roles &amp; Codes">
+        <div class="card"><h2 class="section-title">Four default roles</h2><div class="list-row"><b>Lead</b><span>Full curriculum control</span></div><div class="list-row"><b>Coordinator</b><span>Full curriculum control</span></div><div class="list-row"><b>Facilitator</b><span>Scoped resources access</span></div><div class="list-row"><b>Participant</b><span>Personal schedule and results (roster account)</span></div><p class="muted">Superadmin is built-in, separate from these defaults. This demo previews all administrative screens.</p></div>
+        <div class="card"><h2 class="section-title">City codes</h2><div class="list-row">Dhaka <b>DHK</b></div><div class="list-row">Chattogram <b>CTG</b></div><div class="list-row">Sylhet <b>SYL</b></div></div>
+      </section>
+    </main>
+    <footer class="banner">Fictional sample data · Static UI preview · No sign-in or database writes. <a href="participant.html">Participant demo →</a> · <a href="../../">Login</a></footer>
+  </div>
+</div>
+<script src="./demo.js"></script>
+</body>
+</html>

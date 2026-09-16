@@ -10,7 +10,6 @@
 // 6. Enable Authentication > Sign-in method > Google, and add your
 //    deployed domain (e.g. <username>.github.io) under Authorized domains.
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from "firebase/analytics";
 import { getAuth } from 'firebase/auth';
 
 import { getFirestore } from 'firebase/firestore';
@@ -28,10 +27,10 @@ const firebaseConfig = {
   measurementId: "YOUR_MEASUREMENT_ID" // optional — safe to delete this line
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-// Ensure 'export const db' is present:
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+// Keep the login page and static demos usable before Firebase is configured.
+// Analytics is optional and deliberately not initialized for previews.
+export const isFirebaseConfigured = ['apiKey', 'authDomain', 'projectId', 'appId']
+  .every(key => firebaseConfig[key] && !firebaseConfig[key].includes('YOUR_'));
+const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
+export const db = app ? getFirestore(app) : null;
+export const auth = app ? getAuth(app) : null;

@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "test:render": "node scripts/render-test.mjs"
+    "test:render": "node scripts/render-test.mjs",
+    "test:demo": "node scripts/test-demo.mjs",
+    "test:browser": "node scripts/test-browser.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

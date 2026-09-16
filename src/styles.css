@@ -5,16 +5,16 @@
   font-family: -apple-system, "Segoe UI", sans-serif;
 }
 
+/* Monochrome design tokens (black & white aesthetic) */
 :root {
-  --wa14-bg: #252625;          /* page background */
-  --wa14-container: #003223;   /* containers on the background */
-  --wa14-text: #D5E0D5;        /* general text */
-  --wa14-menu: #005B3F;        /* menu / nav */
-  --wa14-menu-text: #D5E0D5;   /* menu text */
-  --wa14-button: #D65641;      /* buttons */
-  --wa14-button-text: #D5E0D5; /* button text */
-  --wa14-textbox: #FFFFFF;     /* text boxes stay white */
-  --wa14-textbox-text: #252625;/* text in text boxes */
+  --bg-main: #09090B;        /* page background */
+  --bg-card: #18181B;        /* cards / containers */
+  --bg-muted: #27272A;       /* raised surfaces, chips, inputs */
+  --border-subtle: #27272A;  /* hairline borders */
+  --border-strong: #3F3F46;  /* emphasised borders */
+  --text-main: #FAFAFA;      /* primary text */
+  --text-muted: #A1A1AA;     /* secondary text */
+  --accent: #FFFFFF;         /* accent (buttons, focus rings) */
 }
 
 * { box-sizing: border-box; }
@@ -22,22 +22,22 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--wa14-bg);
-  color: var(--wa14-text);
+  background: var(--bg-main);
+  color: var(--text-main);
   overflow-x: hidden;
 }
 
 button, input, select, textarea { font: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--wa14-button);
+  outline: 2px solid var(--border-strong);
   outline-offset: 2px;
 }
 
-/* Text boxes stay white with dark text, wherever they appear */
-.wa14-app input, .wa14-app select, .wa14-app textarea {
-  color: var(--wa14-textbox-text);
-  background: #fff;
-}
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--bg-muted); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
 .wa14-app { min-height: 100vh; }
 .wa14-main { display: flex; flex: 1; min-height: 100vh; min-width: 0; }
@@ -63,7 +63,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 .wa14-card:hover {
-  border-color: #387A64;
+  border-color: var(--border-strong);
 }
 
 .wa14-nav-item {
