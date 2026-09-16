@@ -58,6 +58,18 @@ try {
   assert(await evaluate("[...document.querySelectorAll('button')].some(b => b.textContent.includes('Google') && b.disabled)"));
   assert(await evaluate("document.body.innerText.includes('Admin') && document.body.innerText.includes('Participant')"));
   assert.equal(await evaluate("getComputedStyle(document.body).backgroundColor"), 'rgb(9, 9, 11)');
+  // Exercise the actual login buttons and verify their new-tab destinations.
+  for (const [label, page] of [['Admin Panel', 'admin'], ['Participant Panel', 'participant']]) {
+    const url = `http://127.0.0.1:4178/TraningSystem/demo/${page}.html`;
+    await send('Runtime.evaluate', {
+      expression: `[...document.querySelectorAll('button')].find(b => b.textContent.includes(${JSON.stringify(label)})).click()`,
+      userGesture: true
+    });
+    const opened = await wait(async () => (await (await fetch('http://127.0.0.1:9234/json')).json()).find(t => t.id !== target.id && t.url === url));
+    assert(opened, `${label} did not open the expected demo URL`);
+    await fetch(`http://127.0.0.1:9234/json/close/${opened.id}`);
+    console.log(`OK login button: ${label} opens ${page}.html`);
+  }
   assert.deepEqual(errors, [], 'Browser runtime errors');
   console.log('OK browser login: unconfigured Firebase, demo choices, monochrome background, no runtime exceptions');
 } finally {
