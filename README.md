@@ -1,116 +1,70 @@
-# Curriculum & Fellow Training System
+﻿# Participant Training System
 
-A modern, standalone, zero-backend **Curriculum & Fellow Training Management System** designed for educational organizations, fellowship programs, and corporate academies.
+An exact clone of the **wa14-curriculum-calendar** curriculum & training management system, adapted with a four-role model: **Lead, Coordinator, Facilitator, Participant** (plus a built-in Superadmin).
 
-Built with **React**, **Vite**, **Tailwind CSS**, and **Phosphor Icons**, this platform operates **100% client-side** using browser `localStorage` for state persistence — enabling instant deployment to **GitHub Pages** without requiring external databases or API keys.
-
----
-
-## Key Features & Highlights
-
-- **Zero-Backend / Local-First Architecture**: No Firebase, Node backend, or external API keys needed. All data persists client-side in browser `localStorage`.
-- **Sleek Monochrome Design System**: High-contrast black and white dark mode aesthetic (`#09090B` background, `#18181B` cards, `#27272A` borders, `#FAFAFA` crisp white typography).
-- **GitHub Pages Ready**: Out-of-the-box support for hosting on GitHub Pages (`https://mmc1641992.github.io/TraningSystem`).
-- **Multi-Role User Registration**: Anyone visiting the app can log in via 1-click demo profiles or register a custom user account specifying their Name, Email, Organization, and Access Role.
-- **Data Import / Export & Backup**: Export full workspace state to JSON or Excel at any time, or restore pre-configured academy datasets.
+Built with **React**, **Vite**, **Tailwind CSS**, **Phosphor Icons**, **Firebase** (Google sign-in + Firestore) and **xlsx** for Excel import/export. The original WA14 aesthetic (dark green / academy theme) is preserved unchanged.
 
 ---
 
-## User Profiles & Role-Based Access Control (RBAC)
+## Setup
 
-The system supports 3 distinct user profiles, each tailored to specific organizational workflows:
+### 1. Create your Firebase project (free Spark plan is enough)
+1. Go to https://console.firebase.google.com and create a project.
+2. Register a web app (</> icon) and copy the config object.
+3. Paste it into `src/firebaseConfig.js`, replacing the placeholder values.
+4. **Firestore Database** -> Create database (production mode, any region).
+5. **Firestore > Rules** -> paste the rules from `firestore.rules` in this repo -> Publish.
+6. **Authentication > Sign-in method** -> enable **Google**.
+7. **Authentication > Settings > Authorized domains** -> add your deploy domain (e.g. `<username>.github.io`).
 
-### 1. Superadmin (System Lead)
-- **Scope**: Complete global authority over the organization's training workspace.
-- **Capabilities**:
-  - Manage WA Staff accounts and assign access roles.
-  - Define system roles, permissions, and location/city codes.
-  - Reset, seed, or wipe workspace data.
-  - Export full organization analytics and attendance logs.
+### 2. Organization identity (one place)
+At the top of `src/App.jsx`:
 
-### 2. Staff / Curriculum Manager
-- **Scope**: Curriculum designers, program managers, and cohort facilitators.
-- **Capabilities**:
-  - **Curriculum Calendar**: Create, edit, reschedule, duplicate, or unschedule sessions.
-  - **Staff Calendar**: Assign staff tasks, facilitator shifts, and track task completion.
-  - **Attendance Management**: Review fellow check-ins, record manual attendance, and export attendance reports.
-  - **Assessments & Grading**: Build quizzes, set pass thresholds, release grades, and perform paragraph review grading.
-  - **Security & Logistics**: Monitor incident logs, approve/deny device change requests, and manage physical rooms.
-  - **Historical Archives**: Archive completed academies and import past sessions into current schedules.
+    const ORG_DOMAIN = 'teachforbangladesh.org'; // email domain allowed to sign in
+    const ORG_NAME   = 'Teach For Bangladesh';   // shown on the sign-in card / top bar
 
-### 3. Fellow / Trainee Participant
-- **Scope**: Enrolled fellows, students, or trainees.
-- **Capabilities**:
-  - **Personalized Schedule**: View week-by-week curriculum calendar filtered for fellow visibility.
-  - **Check-in Attendance**: Record attendance for active synchronous sessions within allowed check-in windows.
-  - **Online Assessments**: Take quizzes, submit paragraph answers, and view graded attempt score breakdowns.
-  - **Personal Analytics**: Track attendance rate, completed assessment scores, and upcoming deadlines.
-  - **Device Management**: Submit device authorization requests if changing phones or laptops.
+- Staff/coordinators sign in with `name@<ORG_DOMAIN>` (single-word).
+- Participants sign in with `firstname.lastname@<ORG_DOMAIN>` (must be added to the roster first).
+- `mehdi@<ORG_DOMAIN>` is the permanent Superadmin - change it to your lead's address.
+
+### 3. Run
+
+    npm install
+    npm run dev          # local dev server
+    npm run build        # production bundle in dist/
+    npm run test:render  # renders every panel + checks helpers
 
 ---
 
-## Detailed Features Breakdown
+## Roles
 
-| Feature Module | Description |
+| Role | Access |
 |---|---|
-| **Vision & Pillars Overview** | Display academy vision, core training goals, and structural pillars. |
-| **Curriculum Calendar** | Interactive calendar grid supporting weekly filtering, session detail views, and facilitator assignments. |
-| **Staff Planning Calendar** | Drag-and-drop task editor for staff prep work, shift planning, and task status tracking. |
-| **Attendance Records Engine** | Real-time window check-in tracking (On-Time, Late, Closed) with manual override and Excel export. |
-| **Assessment Creator & Quiz Engine** | Supports multiple choice, paragraph responses, automated scoring, and grade release toggles. |
-| **Paragraph Review Panel** | Interface for staff to review, grade, and leave qualitative feedback on essay responses. |
-| **Incident Log Panel** | Tracks assessment tab-switch flags, device mismatches, or candidate security logs. |
-| **Device Request Panel** | Workflow for fellows to request device authorization changes with staff approval controls. |
-| **Time Summary & Analytics** | Aggregates training hours by pillar, work mode (Sync, Async, Workshop), and facilitator. |
-| **Historical Academies Archive** | Store completed training programs and clone archived sessions into new cohorts. |
-| **Excel & JSON Data Engine** | Full workspace import/export compatible with standard `.xlsx` files and `.json` backups. |
+| **Superadmin** | Built-in only - manages WA Staff accounts, roles, city codes, can reset/seed data. |
+| **Lead** | Full control of the calendar, sessions, attendance, assessments, archives. |
+| **Coordinator** | Full control of the calendar, sessions, attendance, assessments, archives. |
+| **Facilitator** | Resources access; can be assigned to rooms and facilitator groups. |
+| **Participant** | Personalized schedule, attendance check-in, online assessments, personal analytics, device requests. |
 
----
+Default roles are defined in `DEFAULT_STAFF_ROLES` in `src/App.jsx` and can be extended by the Superadmin in the app (Roles & Codes panel).
 
-## Getting Started Locally
+## Features
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Installation & Local Run
-
-```bash
-# Clone the repository
-git clone https://github.com/mmc1641992/TraningSystem.git
-
-# Navigate into project directory
-cd TraningSystem
-
-# Install dependencies
-npm install
-
-# Start local development server
-npm run dev
-```
-
-Open `http://localhost:5173` in your browser.
-
----
+- **Curriculum Calendar** - interactive weekly grid, session editor, facilitator/room assignment, overlap layout.
+- **Sessions Table / Assignment / Rooms / Pillars / Session Types / Work Modes** panels.
+- **Attendance** - check-in windows (On-Time / Late / Closed), manual override, Excel export.
+- **Assessments** - quiz builder (multiple choice, grid, paragraph), automated scoring, paragraph review grading, grade release.
+- **Analytics** - time summary by pillar/mode, participant attendance and assessment breakdowns.
+- **Incident log & device change requests** - assessment integrity and device authorization workflow.
+- **Staff Calendar** - staff task planning with drag-and-drop status tracking.
+- **Academy overview & historical archives** - clone archived sessions into new cohorts.
+- **WA Staff panel + Roles & Codes** - Superadmin-managed accounts, custom roles, city call signs.
+- **Excel & JSON import/export** - full workspace backup and per-sheet `.xlsx` exports.
 
 ## Deploying to GitHub Pages
 
-To host this app for free on GitHub Pages:
-
-1. Build the production bundle:
-   ```bash
-   npm run build
-   ```
-2. Commit and push your changes to `main`:
-   ```bash
-   git add .
-   git commit -m "Deploy training system"
-   git push origin main
-   ```
-3. In your GitHub repository settings (`https://github.com/mmc1641992/TraningSystem/settings/pages`), under **Build and deployment**, select **GitHub Actions** or set Source to `main` / `dist`.
-
----
+A GitHub Actions workflow (`.github/workflows/main.yml`) builds and deploys on every push to `master`. `vite.config.js` sets `base: '/TraningSystem/'` to match the repo path. Requires the Firebase authorized-domain step above for sign-in to work on the deployed domain.
 
 ## License
 
-MIT License — Free to use, adapt, and deploy for any organization or academy.
+MIT.

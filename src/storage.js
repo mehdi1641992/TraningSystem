@@ -1,39 +1,25 @@
-// Pure client-side localStorage storage engine for Curriculum & Fellow Training System
-// 100% static site / GitHub Pages ready without backend or Firebase dependencies.
-
-const LISTENERS = new Map();
-
-function notify(key, value) {
-  const record = value !== null ? { key, value } : null;
-  const callbacks = LISTENERS.get(key) || [];
-  callbacks.forEach(cb => {
-    try { cb(record); } catch (e) { console.error('storage listener error', key, e); }
-  });
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key && LISTENERS.has(e.key)) {
-      notify(e.key, e.newValue);
-    }
-  });
-}
+// Thin wrapper so the rest of the app can keep calling storage.get/set/delete
+// the same way it did inside Claude's artifact environment, but backed by a
+// real, free Firestore database instead of window.storage.
+import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { db } from './firebaseConfig';
+const COLLECTION = 'wa14';
 
 export const ASSESSMENT_KEYS = {
-  assessments: 'ts-assessments',
-  questions: 'ts-assessment-questions',
-  attempts: 'ts-assessment-attempts',
-  attendance: 'ts-attendance',
-  incidents: 'ts-assessment-incidents',
-  deviceRequests: 'ts-device-change-requests',
-  analytics: 'ts-assessment-analytics',
-  academyOverview: 'ts-academy-overview',
-  historicalAcademies: 'ts-historical-academies',
+  assessments: 'wa14-assessments',
+  questions: 'wa14-assessment-questions',
+  attempts: 'wa14-assessment-attempts',
+  attendance: 'wa14-attendance',
+  incidents: 'wa14-assessment-incidents',
+  deviceRequests: 'wa14-device-change-requests',
+  analytics: 'wa14-assessment-analytics',
+  academyOverview: 'wa14-academy-overview',
+  historicalAcademies: 'wa-historical-academies',
 };
 
 export const ACADEMY_KEYS = {
-  academyOverview: 'ts-academy-overview',
-  historicalAcademies: 'ts-historical-academies',
+  academyOverview: 'wa14-academy-overview',
+  historicalAcademies: 'wa-historical-academies',
 };
 
 export function parseStoredArray(record) {
@@ -48,44 +34,22 @@ export function parseStoredArray(record) {
 
 export const storage = {
   async get(key) {
-    try {
-      const val = localStorage.getItem(key);
-      return val !== null ? { key, value: val } : null;
-    } catch (e) {
-      return null;
-    }
+    const snap = await getDoc(doc(db, COLLECTION, key));
+    return snap.exists() ? { key, value: snap.data().value } : null;
   },
   async set(key, value) {
-    try {
-      localStorage.setItem(key, value);
-      notify(key, value);
-      return { key, value };
-    } catch (e) {
-      console.error('localStorage.setItem failed', key, e);
-      return { key, value };
-    }
+    await setDoc(doc(db, COLLECTION, key), { value, updatedAt: Date.now() });
+    return { key, value };
   },
   async delete(key) {
-    try {
-      localStorage.removeItem(key);
-      notify(key, null);
-      return { key, deleted: true };
-    } catch (e) {
-      return { key, deleted: false };
-    }
+    await deleteDoc(doc(db, COLLECTION, key));
+    return { key, deleted: true };
   },
   subscribe(key, callback) {
-    if (!LISTENERS.has(key)) {
-      LISTENERS.set(key, []);
-    }
-    LISTENERS.get(key).push(callback);
-
-    // Immediate initial call
-    this.get(key).then(rec => callback(rec));
-
-    return () => {
-      const arr = LISTENERS.get(key) || [];
-      LISTENERS.set(key, arr.filter(cb => cb !== callback));
-    };
-  }
+    return onSnapshot(doc(db, COLLECTION, key), (snap) => {
+      try { callback(snap.exists() ? { key, value: snap.data().value } : null); }
+      catch (error) { console.error('subscribe callback failed', key, error); }
+    }, (error) => { console.error('subscribe failed', key, error); });
+  },
 };
+
